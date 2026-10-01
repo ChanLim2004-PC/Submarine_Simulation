@@ -39,7 +39,7 @@ public static class LightSceneBuilder
 
         EnsureFolder(MaterialFolder);                                    // 머티리얼 폴더가 없으면 만들기
 
-        // 테스트용 머티리얼 (모두 불투명 URP Lit → 깊이를 기록하므로 L1 감쇠가 걸림)
+        // 테스트용 머티리얼 (모두 불투명 URP Lit → 깊이를 기록하므로 수중 감쇠 효과가 걸림)
         Material white = GetOrCreateMaterial(lit, "Test_White", new Color(1f, 1f, 1f));
         Material red   = GetOrCreateMaterial(lit, "Test_Red",   new Color(1f, 0f, 0f));
         Material green = GetOrCreateMaterial(lit, "Test_Green", new Color(0f, 1f, 0f));
@@ -51,7 +51,7 @@ public static class LightSceneBuilder
         // 빈 씬 새로 만들기 (카메라·조명 없이 시작)
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-        // ── 1) 태양 (Directional Light) — 나중에 L3가 수심에 따라 세기를 줄임 ──
+        // ── 1) 태양 (Directional Light) — 나중에 수심대 시스템이 수심에 따라 세기를 줄임 ──
         var sunGO = new GameObject("Sun");                               // 오브젝트 이름
         var sun = sunGO.AddComponent<Light>();                           // 조명 컴포넌트 추가
         sun.type = LightType.Directional;                                // 평행광 (햇빛)
@@ -68,7 +68,7 @@ public static class LightSceneBuilder
         floor.GetComponent<Renderer>().sharedMaterial = floorMat;        // 모래색 적용
 
         // ── 3) 잠수정 대용 — 빈 부모(이동·수심 추적 대상) + 몸체 큐브 + 카메라 ──
-        var sub = new GameObject("Submarine_Proxy");                     // L3가 이 오브젝트의 y로 수심을 계산
+        var sub = new GameObject("Submarine_Proxy");                     // 수심대 시스템이 이 오브젝트의 y로 수심을 계산
         sub.transform.position = new Vector3(0f, -10f, 0f);              // 수면(y=0) 아래 10m
 
         var body = GameObject.CreatePrimitive(PrimitiveType.Cube);       // 눈에 보이는 몸체
@@ -87,7 +87,7 @@ public static class LightSceneBuilder
         cam.nearClipPlane = 0.1f;                                        // 가까운 면 0.1m
         cam.farClipPlane = 500f;                                         // 먼 면 500m
         camGO.AddComponent<AudioListener>();                             // 소리 듣는 위치 (경고 방지용)
-        cam.GetUniversalAdditionalCameraData().renderPostProcessing = true; // Post Processing 켬 (2단계 카메라 톤에 필요)
+        cam.GetUniversalAdditionalCameraData().renderPostProcessing = true; // Post Processing 켬 (카메라 톤 Volume에 필요)
 
         // ── 5) 색 큐브 — 거리별 묶음 5개, 묶음마다 위에서부터 흰·빨·초·파 ──
         var targets = new GameObject("TestTargets").transform;           // 큐브들을 모아 둘 부모

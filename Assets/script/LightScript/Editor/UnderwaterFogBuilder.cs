@@ -3,7 +3,7 @@ using UnityEditor.SceneManagement;                 // 씬 저장
 using UnityEngine;                                 // 기본 Unity 타입
 using UnityEngine.Rendering.Universal;             // URP Renderer Data, Full Screen Pass
 
-// L1 수중 감쇠 — 머티리얼 생성 + PC_Renderer에 Full Screen Pass 추가 + LightScene에 확인용 오브젝트 배치
+// 수중 감쇠 — 머티리얼 생성 + PC_Renderer에 Full Screen Pass 추가 + LightScene에 확인용 오브젝트 배치
 // 사용법: LightScene을 연 상태에서 메뉴 Light > 3. 수중 감쇠 (UnderwaterFog)
 public static class UnderwaterFogBuilder
 {
@@ -12,7 +12,7 @@ public static class UnderwaterFogBuilder
     const string ShaderName = "Light/UnderwaterFog";                              // 셰이더 이름 (UnderwaterFog.shader 첫 줄)
     const string MaterialFolder = "Assets/Materials/Light";                       // 빛 파트 머티리얼 폴더
     const string MaterialPath = MaterialFolder + "/UnderwaterFog.mat";            // 만들 머티리얼 경로
-    public const string FeatureName = "UnderwaterFog";                            // Renderer Feature 이름 (L9 토글 키가 이 이름으로 찾음)
+    public const string FeatureName = "UnderwaterFog";                            // Renderer Feature 이름 (나중에 효과 토글 키가 이 이름으로 찾음)
 
     [MenuItem("Light/3. 수중 감쇠 (UnderwaterFog)")]
     public static void Build()

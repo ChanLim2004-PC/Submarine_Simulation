@@ -4,7 +4,7 @@ using UnityEngine;                                 // 기본 Unity 타입
 using UnityEngine.Rendering;                       // Volume, VolumeProfile
 using UnityEngine.Rendering.Universal;             // Bloom, Vignette, ColorAdjustments
 
-// L5 카메라 톤 — 3인칭 카메라용 Volume 프로필(ThirdPersonProfile)을 만들고 LightScene에 적용하는 에디터 도구
+// 카메라 톤 — 3인칭 카메라용 Volume 프로필(ThirdPersonProfile)을 만들고 LightScene에 적용하는 에디터 도구
 // 사용법: LightScene을 연 상태에서 메뉴 Light > 2. 카메라 톤 (ThirdPersonProfile)
 public static class ThirdPersonProfileBuilder
 {
@@ -51,7 +51,7 @@ public static class ThirdPersonProfileBuilder
             profile.components.Clear();                                           // 목록 비우기
         }
 
-        // ── 2) 오버라이드 추가 (명세 L5: Vignette 약하게, Bloom, Color Adjustments) ──
+        // ── 2) 오버라이드 추가 (3인칭용: Vignette 약하게, Bloom, Color Adjustments) ──
         var bloom = AddOverride<Bloom>(profile);                                  // 밝은 부분이 번져 보이게
         bloom.threshold.Override(1.0f);                                           // 밝기 1 이상만 번짐 (발광 생물 Emission 1.5~4가 걸리도록)
         bloom.intensity.Override(0.6f);                                           // 번짐 세기
