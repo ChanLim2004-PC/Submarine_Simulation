@@ -2,6 +2,7 @@
 // 멀리 있는 픽셀일수록 RGB 채널별로 빛이 줄어 물색에 묻힌다 (빨강이 가장 빨리 사라짐)
 //   t = exp(-σ · d),  최종색 = 원래색 × t + 물색 × (1 − t)
 // σ(_UW_Sigma)와 물색(_UW_WaterColor)은 전역 셰이더 변수로 받는다 (L3 수심대 시스템이 설정)
+// _UW_Enabled가 1일 때만 동작한다 (기본 0 = 꺼짐)
 Shader "Light/UnderwaterFog"
 {
     SubShader
@@ -26,6 +27,10 @@ Shader "Light/UnderwaterFog"
 
             float3 _UW_Sigma;        // 채널별 감쇠 계수 σ (R, G, B) /m — 전역 변수
             float4 _UW_WaterColor;   // 물색 — 전역 변수
+            // 효과 켜짐 여부 — 전역 변수 (1 = 켜짐, 0 = 꺼짐)
+            // 아무도 설정하지 않으면 기본값 0 → 효과 꺼짐 (팀원 씬에서는 원래 화면 그대로)
+            // 켜고 끄는 쪽: UnderwaterFogPreview(테스트용), 이후 DepthZoneSystem(L3)과 L9 효과 토글 키
+            float _UW_Enabled;
 
             half4 Frag(Varyings input) : SV_Target
             {
@@ -33,6 +38,8 @@ Shader "Light/UnderwaterFog"
                 float2 uv = input.texcoord;                         // 이 픽셀의 화면 좌표 (0~1)
 
                 half4 src = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_PointClamp, uv);   // 원래 화면 색
+
+                if (_UW_Enabled < 0.5) return src;                  // 효과가 꺼져 있으면 원래 화면 그대로 반환
 
                 float rawDepth = SampleSceneDepth(uv);              // 깊이 버퍼 값 (0~1, 플랫폼마다 방향이 다름)
 
