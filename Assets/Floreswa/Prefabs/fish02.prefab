@@ -106,5 +106,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 89f5289eae8a0424db29106cf746af1b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlockUnit
-  FOVAngle: 270
-  smoothDamp: 1
+  _FOVAngle: 270
+  _smoothDamp: 0.5
