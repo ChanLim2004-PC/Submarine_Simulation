@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5378970300970570933
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5978392834515489581}
+  - component: {fileID: 5210238610516723305}
+  m_Layer: 0
+  m_Name: Flock
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5978392834515489581
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5378970300970570933}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -10, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5210238610516723305
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5378970300970570933}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23e8c92eac2a95f43a721102b07ccbdf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Flock
+  flockUnitPrefab: {fileID: -8909912604268614333, guid: a20ffe8d10c78534cafd817b38517e05, type: 3}
+  flockSize: 100
+  spawnBounds: {x: 1, y: 0.5, z: 1}
+  _minSpeed: 1
+  _maxSpeed: 3
+  _cohesionDistance: 1
+  _avoidanceDistance: 1
+  _aligementDistance: 1
+  _obstacleDistance: 1
+  _boundsDistance: 1
+  _cohesionWeight: 1
+  _avoidanceWeight: 1
+  _aligementWeight: 1
+  _boundsWeight: 1
+  _obstacleWeight: 1
+  moveInterval: 3
+  wanderRadius: 50
+  moveSpeed: 5
+  maxFollowDistance: 35
+  spawnDistanceMin: 10
+  spawnDistanceMax: 30
+  spawnSpreadRadius: 15
+  surfaceY: 0
+  fullLifeDepth: 20
+  barrenDepth: 150
