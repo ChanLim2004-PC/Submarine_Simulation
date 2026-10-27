@@ -38,13 +38,14 @@ public class PropScatterGenerator
         float length = terrainData.size.z;
         Vector3 terrainOrigin = terrainObj.transform.position;
 
-        float RadiusAt(float u, float v)
+        float RuggednessAt(float u, float v)
         {
             float steepness01 = Mathf.Clamp01(terrainData.GetSteepness(u, v) / 60f);
             float height01 = terrainData.GetInterpolatedHeight(u, v) / terrainData.size.y;
-            float ruggedness = Mathf.Clamp01(steepness01 * 0.7f + Mathf.InverseLerp(0.35f, 0.7f, height01) * 0.5f);
-            return Mathf.Lerp(maxRadius, minRadius, ruggedness);
+            return Mathf.Clamp01(steepness01 * 0.7f + Mathf.InverseLerp(0.35f, 0.7f, height01) * 0.5f);
         }
+
+        float RadiusAt(float u, float v) => Mathf.Lerp(maxRadius, minRadius, RuggednessAt(u, v));
 
         List<Vector2> points = PoissonDiskSample(width, length, RadiusAt, LayoutSeed);
 
@@ -60,14 +61,16 @@ public class PropScatterGenerator
             Vector3 worldPos = new Vector3(terrainOrigin.x + p.x, worldY, terrainOrigin.z + p.y);
             Vector3 normal = terrainData.GetInterpolatedNormal(u, v);
 
-            GameObject rock = CreateRockPlaceholder(rng);
-            rock.transform.SetParent(container.transform, true);
-            rock.transform.position = worldPos;
-            rock.transform.rotation = Quaternion.FromToRotation(Vector3.up, normal) * Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
+            float ruggedness = RuggednessAt(u, v);
+            bool isRock = rng.NextDouble() < Mathf.Lerp(0.15f, 0.9f, ruggedness);
+            GameObject prop = isRock ? CreateRockPlaceholder(rng) : CreateCoralPlaceholder(rng);
+            prop.transform.SetParent(container.transform, true);
+            prop.transform.position = worldPos;
+            prop.transform.rotation = Quaternion.FromToRotation(Vector3.up, normal) * Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
             placed++;
         }
 
-        Debug.Log($"[프롭 배치] 바위 placeholder {placed}개 배치 완료.");
+        Debug.Log($"[프롭 배치] placeholder {placed}개 배치 완료.");
 
         Selection.activeGameObject = container;
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
@@ -90,7 +93,39 @@ public class PropScatterGenerator
         mat.color = new Color(gray, gray * 0.95f, gray * 0.88f);
         renderer.sharedMaterial = mat;
 
+        var info = rock.AddComponent<OceanPropInfo>();
+        info.category = "Rock";
+        info.displayName = "바위";
+
         return rock;
+    }
+
+    static GameObject CreateCoralPlaceholder(System.Random rng)
+    {
+        GameObject root = new GameObject("Coral");
+        int blobCount = rng.Next(2, 4);
+        Color tint = Color.HSVToRGB(Lerp01(rng, 0.0f, 0.1f) + (rng.Next(2) == 0 ? 0f : 0.75f), 0.55f, 0.8f);
+
+        for (int i = 0; i < blobCount; i++)
+        {
+            GameObject blob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            blob.name = "CoralBlob";
+            blob.transform.SetParent(root.transform, false);
+            float scale = Lerp01(rng, 0.8f, 2.2f);
+            blob.transform.localScale = Vector3.one * scale;
+            blob.transform.localPosition = new Vector3(Lerp01(rng, -1f, 1f), scale * 0.4f, Lerp01(rng, -1f, 1f));
+
+            var renderer = blob.GetComponent<MeshRenderer>();
+            var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            mat.color = tint;
+            renderer.sharedMaterial = mat;
+        }
+
+        var info = root.AddComponent<OceanPropInfo>();
+        info.category = "Coral";
+        info.displayName = "산호";
+
+        return root;
     }
 
     static float Lerp01(System.Random rng, float a, float b) => a + (float)rng.NextDouble() * (b - a);
