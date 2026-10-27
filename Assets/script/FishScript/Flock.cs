@@ -9,14 +9,6 @@ using Unity.Burst;
 
 public class Flock : MonoBehaviour
 {
-    public enum OceanLayer
-    {
-        Photic,        // 유광층
-        Boundary,      // 경계층
-        BacklitDeep,   // 역광측/심해 경계
-        Aphotic        // 무광층 (심해)
-    }
-
     [Header("Spawn Setup")]
     [SerializeField] private FlockUnit flockUnitPrefab;
     [SerializeField] private int flockSize;
@@ -113,6 +105,7 @@ public class Flock : MonoBehaviour
         _minSpeed = UnityEngine.Random.Range(1f, 2f);
         _maxSpeed = UnityEngine.Random.Range(2f, 5f);
     }
+    
     private void depthSpawn(Camera cam)
     {
         if (cam != null)
@@ -120,30 +113,29 @@ public class Flock : MonoBehaviour
             float currentDepth = surfaceY - cam.transform.position.y;
             currentDepth = Mathf.Max(0f, currentDepth);
 
-            OceanLayer currentLayer;
             float targetDensityRatio = 1f;
 
             // 2. 수심에 따른 구간(Layer) 판별 및 밀도 결정
             if (currentDepth <= photicLimit)
             {
-                currentLayer = OceanLayer.Photic;
+                
                 targetDensityRatio = 1.0f; // 100% 다 킴
             }
             else if (currentDepth <= boundaryLimit)
             {
-                currentLayer = OceanLayer.Boundary;
+                
                 // 유광층에서 경계층으로 갈수록 서서히 줄어듦 (1.0 -> 0.5)
                 targetDensityRatio = Mathf.InverseLerp(boundaryLimit, photicLimit, currentDepth) * 0.5f + 0.5f;
             }
             else if (currentDepth <= backlitLimit)
             {
-                currentLayer = OceanLayer.BacklitDeep;
+              
                 // 경계층에서 역광측으로 갈수록 더 줄어듦 (0.5 -> 0.1)
                 targetDensityRatio = Mathf.InverseLerp(backlitLimit, boundaryLimit, currentDepth) * 0.4f + 0.1f;
             }
             else
             {
-                currentLayer = OceanLayer.Aphotic;
+               
                 targetDensityRatio = 0.0f; // 심해 무광층은 물고기 끄기!
             }
 
