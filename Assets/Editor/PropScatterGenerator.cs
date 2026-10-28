@@ -76,22 +76,63 @@ public class PropScatterGenerator
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
     }
 
+    const string RockPackPrefabFolder = "Assets/StylizedRocksPackFREE/Prefabs/Rocks";
+    const string RockPackTextureFolder = "Assets/StylizedRocksPackFREE/Textures/Rocks";
+
+    static GameObject[] rockPrefabsCache;
+    static System.Collections.Generic.Dictionary<string, Material> rockMatCache;
+
+    static GameObject[] LoadRockPrefabs()
+    {
+        if (rockPrefabsCache != null) return rockPrefabsCache;
+        string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { RockPackPrefabFolder });
+        rockPrefabsCache = new GameObject[guids.Length];
+        for (int i = 0; i < guids.Length; i++)
+            rockPrefabsCache[i] = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guids[i]));
+        return rockPrefabsCache;
+    }
+
+    // 프리팹 이름에서 텍스처 세트 이름 추출 (예: PF_RockPack_Cliff_07_A -> Cliff_07, 없으면 Rocks_01)
+    static string RockTextureSetFor(string prefabName)
+    {
+        if (prefabName.Contains("Cliff_07")) return "Cliff_07";
+        if (prefabName.Contains("RockGroups_01")) return "RockGroups_01";
+        if (prefabName.Contains("RockGroups_02")) return "RockGroups_02";
+        return "Rocks_01";
+    }
+
+    // MM_CliffsMoss 셰이더가 데모팩에서 깨져있어서(서브그래프 누락), 같은 텍스처로 URP/Lit 머티리얼을 새로 만들어 대신 씀
+    static Material RockMaterialFor(string textureSet)
+    {
+        rockMatCache ??= new System.Collections.Generic.Dictionary<string, Material>();
+        if (rockMatCache.TryGetValue(textureSet, out var cached)) return cached;
+
+        Texture2D bc = AssetDatabase.LoadAssetAtPath<Texture2D>($"{RockPackTextureFolder}/T_RockPack_{textureSet}_BC.tga");
+        Texture2D n = AssetDatabase.LoadAssetAtPath<Texture2D>($"{RockPackTextureFolder}/T_RockPack_{textureSet}_N.tga");
+
+        var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+        if (bc != null) mat.SetTexture("_BaseMap", bc);
+        if (n != null) mat.SetTexture("_BumpMap", n);
+        mat.SetFloat("_Smoothness", 0.25f);
+
+        rockMatCache[textureSet] = mat;
+        return mat;
+    }
+
     static GameObject CreateRockPlaceholder(System.Random rng)
     {
-        GameObject rock = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        GameObject[] prefabs = LoadRockPrefabs();
+        GameObject prefab = prefabs[rng.Next(prefabs.Length)];
+        GameObject rock = Object.Instantiate(prefab);
         rock.name = "Rock";
-        float baseScale = Lerp01(rng, 2.5f, 7f);
-        rock.transform.localScale = new Vector3(
-            baseScale * Lerp01(rng, 0.7f, 1.3f),
-            baseScale * Lerp01(rng, 0.5f, 0.9f),
-            baseScale * Lerp01(rng, 0.7f, 1.3f));
-        rock.transform.Rotate(Lerp01(rng, -15f, 15f), 0f, Lerp01(rng, -15f, 15f));
 
-        var renderer = rock.GetComponent<MeshRenderer>();
-        float gray = Lerp01(rng, 0.22f, 0.42f);
-        var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-        mat.color = new Color(gray, gray * 0.95f, gray * 0.88f);
-        renderer.sharedMaterial = mat;
+        Material mat = RockMaterialFor(RockTextureSetFor(prefab.name));
+        foreach (var renderer in rock.GetComponentsInChildren<MeshRenderer>())
+            renderer.sharedMaterial = mat;
+
+        float scale = Lerp01(rng, 0.6f, 1.8f);
+        rock.transform.localScale = Vector3.one * scale;
+        rock.transform.Rotate(Lerp01(rng, -10f, 10f), 0f, Lerp01(rng, -10f, 10f));
 
         var info = rock.AddComponent<OceanPropInfo>();
         info.category = "Rock";
