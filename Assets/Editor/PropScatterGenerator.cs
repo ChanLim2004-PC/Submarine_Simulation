@@ -8,7 +8,7 @@ public class PropScatterGenerator
 {
     const int LayoutSeed = 11;
     const float minRadius = 18f;
-    const float maxRadius = 70f;
+    const float maxRadius = 100f;
 
     [MenuItem("Tools/해저 프롭 배치 (Poisson Disk Sampling)")]
     public static void ScatterProps()
@@ -63,11 +63,33 @@ public class PropScatterGenerator
 
             float ruggedness = RuggednessAt(u, v);
             bool isRock = rng.NextDouble() < Mathf.Lerp(0.15f, 0.9f, ruggedness);
-            GameObject prop = isRock ? CreateRockPlaceholder(rng) : CreateCoralPlaceholder(rng);
+            GameObject prop = isRock ? CreateRockPlaceholder(rng, ruggedness) : CreateCoralPlaceholder(rng);
             prop.transform.SetParent(container.transform, true);
             prop.transform.position = worldPos;
             prop.transform.rotation = Quaternion.FromToRotation(Vector3.up, normal) * Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
             placed++;
+
+            // 험한 지점(해저산 사면·절벽)에는 큰 바위 주변에 작은 돌(자갈)을 흩뿌려 talus field처럼 무더기로 보이게 함
+            if (isRock && ruggedness > 0.4f)
+            {
+                int gravelCount = rng.Next(2, 5);
+                for (int g = 0; g < gravelCount; g++)
+                {
+                    float gu = u + Lerp01(rng, -14f, 14f) / width;
+                    float gv = v + Lerp01(rng, -14f, 14f) / length;
+                    gu = Mathf.Clamp01(gu);
+                    gv = Mathf.Clamp01(gv);
+
+                    float gWorldY = terrainOrigin.y + terrainData.GetInterpolatedHeight(gu, gv);
+                    Vector3 gWorldPos = new Vector3(terrainOrigin.x + gu * width, gWorldY, terrainOrigin.z + gv * length);
+                    Vector3 gNormal = terrainData.GetInterpolatedNormal(gu, gv);
+
+                    GameObject gravel = CreateGravelPlaceholder(rng);
+                    gravel.transform.SetParent(container.transform, true);
+                    gravel.transform.position = gWorldPos;
+                    gravel.transform.rotation = Quaternion.FromToRotation(Vector3.up, gNormal) * Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
+                }
+            }
         }
 
         Debug.Log($"[프롭 배치] placeholder {placed}개 배치 완료.");
@@ -119,18 +141,50 @@ public class PropScatterGenerator
         return mat;
     }
 
-    static GameObject CreateRockPlaceholder(System.Random rng)
+    static GameObject[] cliffPrefabsCache, groupPrefabsCache, singlePrefabsCache;
+
+    static void SplitRockPrefabsByTier()
     {
-        GameObject[] prefabs = LoadRockPrefabs();
-        GameObject prefab = prefabs[rng.Next(prefabs.Length)];
+        if (cliffPrefabsCache != null) return;
+        var cliffs = new List<GameObject>();
+        var groups = new List<GameObject>();
+        var singles = new List<GameObject>();
+        foreach (var p in LoadRockPrefabs())
+        {
+            if (p.name.Contains("Cliff")) cliffs.Add(p);
+            else if (p.name.Contains("RockGroups")) groups.Add(p);
+            else singles.Add(p);
+        }
+        cliffPrefabsCache = cliffs.ToArray();
+        groupPrefabsCache = groups.ToArray();
+        singlePrefabsCache = singles.ToArray();
+    }
+
+    // 험할수록 RockGroups(뭉친 바위 더미)·Cliff(큰 랜드마크) 비중을 높이고, 완만할수록 낱개 작은 바위 위주로 감
+    static GameObject PickRockPrefab(System.Random rng, float ruggedness)
+    {
+        SplitRockPrefabsByTier();
+        double roll = rng.NextDouble();
+        double cliffChance = ruggedness > 0.65f ? 0.25 : 0.0;
+        double groupChance = Mathf.Lerp(0.1f, 0.75f, ruggedness);
+
+        if (roll < cliffChance && cliffPrefabsCache.Length > 0)
+            return cliffPrefabsCache[rng.Next(cliffPrefabsCache.Length)];
+        if (roll < cliffChance + groupChance && groupPrefabsCache.Length > 0)
+            return groupPrefabsCache[rng.Next(groupPrefabsCache.Length)];
+        return singlePrefabsCache[rng.Next(singlePrefabsCache.Length)];
+    }
+
+    static GameObject InstantiateRock(GameObject prefab, string name, float scaleMin, float scaleMax, System.Random rng)
+    {
         GameObject rock = Object.Instantiate(prefab);
-        rock.name = "Rock";
+        rock.name = name;
 
         Material mat = RockMaterialFor(RockTextureSetFor(prefab.name));
         foreach (var renderer in rock.GetComponentsInChildren<MeshRenderer>())
             renderer.sharedMaterial = mat;
 
-        float scale = Lerp01(rng, 0.6f, 1.8f);
+        float scale = Lerp01(rng, scaleMin, scaleMax);
         rock.transform.localScale = Vector3.one * scale;
         rock.transform.Rotate(Lerp01(rng, -10f, 10f), 0f, Lerp01(rng, -10f, 10f));
 
@@ -139,6 +193,20 @@ public class PropScatterGenerator
         info.displayName = "바위";
 
         return rock;
+    }
+
+    static GameObject CreateRockPlaceholder(System.Random rng, float ruggedness)
+    {
+        GameObject prefab = PickRockPrefab(rng, ruggedness);
+        return InstantiateRock(prefab, "Rock", 0.6f, 1.8f, rng);
+    }
+
+    // talus field처럼 큰 바위 주변에 흩어지는 작은 자갈
+    static GameObject CreateGravelPlaceholder(System.Random rng)
+    {
+        SplitRockPrefabsByTier();
+        GameObject prefab = singlePrefabsCache[rng.Next(singlePrefabsCache.Length)];
+        return InstantiateRock(prefab, "Gravel", 0.12f, 0.4f, rng);
     }
 
     static GameObject CreateCoralPlaceholder(System.Random rng)
