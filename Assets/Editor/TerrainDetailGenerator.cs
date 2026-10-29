@@ -52,12 +52,12 @@ public class TerrainDetailGenerator
                 float u = (float)x / resolution;
                 float v = (float)y / resolution;
                 float ruggedness = RuggednessAt(terrainData, u, v);
-                map[y, x] = ruggedness < 0.22f ? 0 : Mathf.RoundToInt(Mathf.Lerp(1f, 10f, Mathf.InverseLerp(0.22f, 0.8f, ruggedness)));
+                map[y, x] = ruggedness < 0.08f ? 0 : Mathf.RoundToInt(Mathf.Lerp(1f, 16f, Mathf.InverseLerp(0.08f, 0.8f, ruggedness)));
             }
         }
         terrainData.SetDetailLayer(0, 0, 0, map);
 
-        terrain.detailObjectDistance = 250f;
+        terrain.detailObjectDistance = 350f;
 
         EditorUtility.SetDirty(terrain);
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());

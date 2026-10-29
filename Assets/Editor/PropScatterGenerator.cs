@@ -7,7 +7,7 @@ using System.Collections.Generic;
 public class PropScatterGenerator
 {
     const int LayoutSeed = 11;
-    const float minRadius = 18f;
+    const float minRadius = 16f;
     const float maxRadius = 100f;
 
     [MenuItem("Tools/해저 프롭 배치 (Poisson Disk Sampling)")]
@@ -63,20 +63,28 @@ public class PropScatterGenerator
 
             float ruggedness = RuggednessAt(u, v);
             bool isRock = rng.NextDouble() < Mathf.Lerp(0.15f, 0.9f, ruggedness);
-            GameObject prop = isRock ? CreateRockPlaceholder(rng, ruggedness) : CreateCoralPlaceholder(rng);
+            // 드물게 압도적으로 큰 랜드마크 바위를 섞어서 무더기 크기 자체에 편차를 줌 (레퍼런스처럼 큰 덩어리 주변에 중간·자잘한 돌)
+            bool isLandmark = isRock && ruggedness > 0.45f && rng.NextDouble() < 0.12f;
+            GameObject prop = isRock ? CreateRockPlaceholder(rng, ruggedness, isLandmark) : CreateCoralPlaceholder(rng);
             prop.transform.SetParent(container.transform, true);
             prop.transform.position = worldPos;
             prop.transform.rotation = Quaternion.FromToRotation(Vector3.up, normal) * Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
             placed++;
 
             // 험한 지점(해저산 사면·절벽)에는 큰 바위 주변에 작은 돌(자갈)을 흩뿌려 talus field처럼 무더기로 보이게 함
+            // 랜드마크 바위는 영역을 넓게/densely 채워서 "큰 바위 + 중간 바위 + 자갈"의 크기 계단을 만듦
             if (isRock && ruggedness > 0.4f)
             {
-                int gravelCount = rng.Next(2, 5);
+                float haloRadius = isLandmark ? 40f : 22f;
+                float minSpacing = isLandmark ? 7f : 4f;
+                List<Vector2> haloOffsets = new List<Vector2>();
+
+                int gravelCount = isLandmark ? rng.Next(7, 13) : rng.Next(2, 5);
                 for (int g = 0; g < gravelCount; g++)
                 {
-                    float gu = u + Lerp01(rng, -14f, 14f) / width;
-                    float gv = v + Lerp01(rng, -14f, 14f) / length;
+                    Vector2 offset = PickSpacedOffset(rng, haloRadius, minSpacing, haloOffsets);
+                    float gu = u + offset.x / width;
+                    float gv = v + offset.y / length;
                     gu = Mathf.Clamp01(gu);
                     gv = Mathf.Clamp01(gv);
 
@@ -88,6 +96,28 @@ public class PropScatterGenerator
                     gravel.transform.SetParent(container.transform, true);
                     gravel.transform.position = gWorldPos;
                     gravel.transform.rotation = Quaternion.FromToRotation(Vector3.up, gNormal) * Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
+                }
+
+                if (isLandmark)
+                {
+                    int mediumCount = rng.Next(2, 4);
+                    for (int m = 0; m < mediumCount; m++)
+                    {
+                        Vector2 offset = PickSpacedOffset(rng, haloRadius * 0.6f, minSpacing * 1.4f, haloOffsets);
+                        float mu = u + offset.x / width;
+                        float mv = v + offset.y / length;
+                        mu = Mathf.Clamp01(mu);
+                        mv = Mathf.Clamp01(mv);
+
+                        float mWorldY = terrainOrigin.y + terrainData.GetInterpolatedHeight(mu, mv);
+                        Vector3 mWorldPos = new Vector3(terrainOrigin.x + mu * width, mWorldY, terrainOrigin.z + mv * length);
+                        Vector3 mNormal = terrainData.GetInterpolatedNormal(mu, mv);
+
+                        GameObject medium = CreateRockPlaceholder(rng, ruggedness, false);
+                        medium.transform.SetParent(container.transform, true);
+                        medium.transform.position = mWorldPos;
+                        medium.transform.rotation = Quaternion.FromToRotation(Vector3.up, mNormal) * Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
+                    }
                 }
             }
         }
@@ -195,8 +225,16 @@ public class PropScatterGenerator
         return rock;
     }
 
-    static GameObject CreateRockPlaceholder(System.Random rng, float ruggedness)
+    static GameObject CreateRockPlaceholder(System.Random rng, float ruggedness, bool isLandmark = false)
     {
+        if (isLandmark)
+        {
+            SplitRockPrefabsByTier();
+            GameObject[] pool = cliffPrefabsCache.Length > 0 ? cliffPrefabsCache : groupPrefabsCache;
+            if (pool.Length == 0) pool = singlePrefabsCache;
+            GameObject landmarkPrefab = pool[rng.Next(pool.Length)];
+            return InstantiateRock(landmarkPrefab, "Rock_Landmark", 2.4f, 4.2f, rng);
+        }
         GameObject prefab = PickRockPrefab(rng, ruggedness);
         return InstantiateRock(prefab, "Rock", 0.6f, 1.8f, rng);
     }
@@ -238,6 +276,24 @@ public class PropScatterGenerator
     }
 
     static float Lerp01(System.Random rng, float a, float b) => a + (float)rng.NextDouble() * (b - a);
+
+    // 같은 무더기 안에서 돌끼리 너무 붙지 않도록 최소 간격을 두고 위치를 뽑음
+    static Vector2 PickSpacedOffset(System.Random rng, float radius, float minSpacing, List<Vector2> placed)
+    {
+        Vector2 candidate = Vector2.zero;
+        for (int attempt = 0; attempt < 10; attempt++)
+        {
+            candidate = new Vector2(Lerp01(rng, -radius, radius), Lerp01(rng, -radius, radius));
+            bool farEnough = true;
+            foreach (var p in placed)
+            {
+                if (Vector2.Distance(candidate, p) < minSpacing) { farEnough = false; break; }
+            }
+            if (farEnough) break;
+        }
+        placed.Add(candidate);
+        return candidate;
+    }
 
     // Bridson 알고리즘 변형, 가변 반경
     static List<Vector2> PoissonDiskSample(float width, float height, System.Func<float, float, float> radiusAt, int seed)
