@@ -6,11 +6,11 @@ TerrainLayer:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: RockLayer
-  m_DiffuseTexture: {fileID: 2800000, guid: e4d014a1a531c481c8242731186c5507, type: 3}
-  m_NormalMapTexture: {fileID: 0}
+  m_Name: CliffLayer
+  m_DiffuseTexture: {fileID: 2800000, guid: 609c525fdeb25da47b0744b1401f6b1c, type: 3}
+  m_NormalMapTexture: {fileID: 2800000, guid: 16b1790fd4ba5af45a23bf9ebd8476c3, type: 3}
   m_MaskMapTexture: {fileID: 0}
-  m_TileSize: {x: 60, y: 60}
+  m_TileSize: {x: 10, y: 10}
   m_TileOffset: {x: 0, y: 0}
   m_Specular: {r: 0, g: 0, b: 0, a: 0}
   m_Metallic: 0
