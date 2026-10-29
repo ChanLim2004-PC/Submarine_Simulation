@@ -65,11 +65,17 @@ public class PropScatterGenerator
             bool isRock = rng.NextDouble() < Mathf.Lerp(0.15f, 0.9f, ruggedness);
             // 드물게 압도적으로 큰 랜드마크 바위를 섞어서 무더기 크기 자체에 편차를 줌 (레퍼런스처럼 큰 덩어리 주변에 중간·자잘한 돌)
             bool isLandmark = isRock && ruggedness > 0.45f && rng.NextDouble() < 0.12f;
-            GameObject prop = isRock ? CreateRockPlaceholder(rng, ruggedness, isLandmark) : CreateCoralPlaceholder(rng);
-            prop.transform.SetParent(container.transform, true);
-            prop.transform.position = worldPos;
-            prop.transform.rotation = Quaternion.FromToRotation(Vector3.up, normal) * Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
-            placed++;
+            // 냉수성 산호는 바위·험지에 붙어 자라므로 산호 등장률도 ruggedness에 비례, 평지는 산호도 없이 맨바닥으로 남김
+            bool isCoral = !isRock && rng.NextDouble() < Mathf.Lerp(0.05f, 0.55f, ruggedness);
+
+            GameObject prop = isRock ? CreateRockPlaceholder(rng, ruggedness, isLandmark) : (isCoral ? CreateCoralPlaceholder(rng) : null);
+            if (prop != null)
+            {
+                prop.transform.SetParent(container.transform, true);
+                prop.transform.position = worldPos;
+                prop.transform.rotation = Quaternion.FromToRotation(Vector3.up, normal) * Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
+                placed++;
+            }
 
             // 험한 지점(해저산 사면·절벽)에는 큰 바위 주변에 작은 돌(자갈)을 흩뿌려 talus field처럼 무더기로 보이게 함
             // 랜드마크 바위는 영역을 넓게/densely 채워서 "큰 바위 + 중간 바위 + 자갈"의 크기 계단을 만듦
@@ -247,22 +253,26 @@ public class PropScatterGenerator
         return InstantiateRock(prefab, "Gravel", 0.12f, 0.4f, rng);
     }
 
+    // 냉수성 산호: 가지가 중심에서 방사형으로 뻗는 형태 (광합성 없이 사니 조류 색소 대신 골격 색 그대로)
     static GameObject CreateCoralPlaceholder(System.Random rng)
     {
         GameObject root = new GameObject("Coral");
-        int blobCount = rng.Next(2, 4);
-        Color tint = Color.HSVToRGB(Lerp01(rng, 0.0f, 0.1f) + (rng.Next(2) == 0 ? 0f : 0.75f), 0.55f, 0.8f);
+        int branchCount = rng.Next(4, 8);
+        Color tint = DeepCoralColor(rng);
 
-        for (int i = 0; i < blobCount; i++)
+        for (int i = 0; i < branchCount; i++)
         {
-            GameObject blob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            blob.name = "CoralBlob";
-            blob.transform.SetParent(root.transform, false);
-            float scale = Lerp01(rng, 0.8f, 2.2f);
-            blob.transform.localScale = Vector3.one * scale;
-            blob.transform.localPosition = new Vector3(Lerp01(rng, -1f, 1f), scale * 0.4f, Lerp01(rng, -1f, 1f));
+            GameObject branch = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            branch.name = "CoralBranch";
+            branch.transform.SetParent(root.transform, false);
 
-            var renderer = blob.GetComponent<MeshRenderer>();
+            float length = Lerp01(rng, 0.6f, 1.8f);
+            float thickness = Lerp01(rng, 0.08f, 0.22f);
+            branch.transform.localRotation = Quaternion.Euler(Lerp01(rng, 10f, 45f), (float)rng.NextDouble() * 360f, 0f);
+            branch.transform.localScale = new Vector3(thickness, length * 0.5f, thickness);
+            branch.transform.localPosition = branch.transform.up * length * 0.4f;
+
+            var renderer = branch.GetComponent<MeshRenderer>();
             var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
             mat.color = tint;
             renderer.sharedMaterial = mat;
@@ -273,6 +283,15 @@ public class PropScatterGenerator
         info.displayName = "산호";
 
         return root;
+    }
+
+    // 빨강/금빛·베이지/흰색 중 랜덤 (냉수성 산호에서 흔한 골격 색 계열)
+    static Color DeepCoralColor(System.Random rng)
+    {
+        double roll = rng.NextDouble();
+        if (roll < 0.35) return Color.HSVToRGB(0.0f, Lerp01(rng, 0.55f, 0.75f), Lerp01(rng, 0.55f, 0.8f));
+        if (roll < 0.6) return Color.HSVToRGB(0.12f, Lerp01(rng, 0.35f, 0.55f), Lerp01(rng, 0.7f, 0.9f));
+        return Color.HSVToRGB(0.0f, 0.0f, Lerp01(rng, 0.85f, 0.97f));
     }
 
     static float Lerp01(System.Random rng, float a, float b) => a + (float)rng.NextDouble() * (b - a);
