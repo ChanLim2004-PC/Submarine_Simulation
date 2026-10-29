@@ -140,7 +140,7 @@ public class PropScatterGenerator
     static GameObject[] rockPrefabsCache;
     static System.Collections.Generic.Dictionary<string, Material> rockMatCache;
 
-    static GameObject[] LoadRockPrefabs()
+    public static GameObject[] LoadRockPrefabs()
     {
         if (rockPrefabsCache != null) return rockPrefabsCache;
         string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { RockPackPrefabFolder });
@@ -151,7 +151,7 @@ public class PropScatterGenerator
     }
 
     // 프리팹 이름에서 텍스처 세트 이름 추출 (예: PF_RockPack_Cliff_07_A -> Cliff_07, 없으면 Rocks_01)
-    static string RockTextureSetFor(string prefabName)
+    public static string RockTextureSetFor(string prefabName)
     {
         if (prefabName.Contains("Cliff_07")) return "Cliff_07";
         if (prefabName.Contains("RockGroups_01")) return "RockGroups_01";
@@ -160,7 +160,7 @@ public class PropScatterGenerator
     }
 
     // MM_CliffsMoss 셰이더가 데모팩에서 깨져있어서(서브그래프 누락), 같은 텍스처로 URP/Lit 머티리얼을 새로 만들어 대신 씀
-    static Material RockMaterialFor(string textureSet)
+    public static Material RockMaterialFor(string textureSet)
     {
         rockMatCache ??= new System.Collections.Generic.Dictionary<string, Material>();
         if (rockMatCache.TryGetValue(textureSet, out var cached)) return cached;
