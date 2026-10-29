@@ -218,21 +218,26 @@ public class SeabedTerrainGenerator
     }
 
     // 높이/경사 기반 모래·암석 텍스처 블렌딩
+    const string RockPackTexFolder = "Assets/StylizedRocksPackFREE/Textures/Rocks";
+
+    // sand/rock 2겹 단색 얼룩 대신 실사진 텍스처 3겹(세디먼트/자갈/절벽)으로 교체 + 노멀맵 적용
     static void PaintTerrainLayers(TerrainData terrainData, string baseFolder)
     {
         string texFolder = $"{baseFolder}/Textures";
         if (!AssetDatabase.IsValidFolder(texFolder))
             AssetDatabase.CreateFolder(baseFolder, "Textures");
 
-        TerrainLayer sandLayer = CreateOrUpdateLayer(texFolder, "SandLayer",
-            new Color(0.76f, 0.70f, 0.52f), new Color(0.68f, 0.62f, 0.45f));
-        TerrainLayer rockLayer = CreateOrUpdateLayer(texFolder, "RockLayer",
-            new Color(0.33f, 0.32f, 0.30f), new Color(0.22f, 0.21f, 0.20f));
+        TerrainLayer sedimentLayer = CreateRealLayer(texFolder, "SedimentLayer",
+            $"{texFolder}/Source/T_CoastSand05_BC.jpg", $"{texFolder}/Source/T_CoastSand05_N.jpg", 24f);
+        TerrainLayer rubbleLayer = CreateRealLayer(texFolder, "RubbleLayer",
+            $"{RockPackTexFolder}/T_RockPack_Rocks_01_BC.tga", $"{RockPackTexFolder}/T_RockPack_Rocks_01_N.tga", 14f);
+        TerrainLayer cliffLayer = CreateRealLayer(texFolder, "CliffLayer",
+            $"{RockPackTexFolder}/T_RockPack_Cliff_07_BC.tga", $"{RockPackTexFolder}/T_RockPack_Cliff_07_N.tga", 10f);
 
-        terrainData.terrainLayers = new TerrainLayer[] { sandLayer, rockLayer };
+        terrainData.terrainLayers = new TerrainLayer[] { sedimentLayer, rubbleLayer, cliffLayer };
 
         int alphaRes = terrainData.alphamapResolution;
-        float[,,] alphamap = new float[alphaRes, alphaRes, 2];
+        float[,,] alphamap = new float[alphaRes, alphaRes, 3];
 
         for (int y = 0; y < alphaRes; y++)
         {
@@ -242,58 +247,54 @@ public class SeabedTerrainGenerator
                 float normY = (float)y / (alphaRes - 1);
                 float steepness = terrainData.GetSteepness(normX, normY) / 90f; // 0~1
                 float height01 = terrainData.GetInterpolatedHeight(normX, normY) / terrainData.size.y;
+                float noise = Mathf.PerlinNoise(normX * 50f, normY * 50f) - 0.5f; // 경계가 너무 딱 떨어지지 않도록
 
-                float rockWeight = Mathf.Clamp01(steepness * 1.6f + Mathf.InverseLerp(0.45f, 0.75f, height01) * 0.8f);
-                rockWeight = Mathf.Clamp01(rockWeight + (Mathf.PerlinNoise(normX * 40f, normY * 40f) - 0.5f) * 0.15f);
+                float cliffWeight = Mathf.Clamp01(Mathf.InverseLerp(0.35f, 0.7f, steepness) + noise * 0.15f);
+                float rubbleBase = Mathf.InverseLerp(0.08f, 0.32f, steepness) + Mathf.InverseLerp(0.42f, 0.7f, height01) * 0.35f;
+                float rubbleWeight = Mathf.Clamp01(rubbleBase * (1f - cliffWeight) + noise * 0.12f);
+                float sedimentWeight = Mathf.Max(0f, 1f - cliffWeight - rubbleWeight);
 
-                alphamap[y, x, 1] = rockWeight;
-                alphamap[y, x, 0] = 1f - rockWeight;
+                float total = cliffWeight + rubbleWeight + sedimentWeight;
+                alphamap[y, x, 0] = sedimentWeight / total;
+                alphamap[y, x, 1] = rubbleWeight / total;
+                alphamap[y, x, 2] = cliffWeight / total;
             }
         }
 
         terrainData.SetAlphamaps(0, 0, alphamap);
     }
 
-    static TerrainLayer CreateOrUpdateLayer(string folder, string name, Color baseColor, Color variantColor)
+    // 이미 임포트된 실사진 BC/N 텍스처를 그대로 읽어서 TerrainLayer로 등록 (바위팩 텍스처는 이미 올바르게 임포트돼 있어 그대로 재사용)
+    static TerrainLayer CreateRealLayer(string folder, string name, string bcPath, string nPath, float tileSize)
     {
+        EnsureNormalMapImport(nPath);
+
+        Texture2D bc = AssetDatabase.LoadAssetAtPath<Texture2D>(bcPath);
+        Texture2D n = AssetDatabase.LoadAssetAtPath<Texture2D>(nPath);
+
         string layerPath = $"{folder}/{name}.terrainlayer";
-        string texPath = $"{folder}/{name}.png";
-
-        Texture2D tex = new Texture2D(128, 128, TextureFormat.RGBA32, true);
-        for (int y = 0; y < 128; y++)
-        {
-            for (int x = 0; x < 128; x++)
-            {
-                float n = Mathf.PerlinNoise(x * 0.12f, y * 0.12f);
-                tex.SetPixel(x, y, Color.Lerp(variantColor, baseColor, n));
-            }
-        }
-        tex.Apply();
-        File.WriteAllBytes(texPath, tex.EncodeToPNG());
-        Object.DestroyImmediate(tex);
-        AssetDatabase.ImportAsset(texPath);
-
-        TextureImporter importer = AssetImporter.GetAtPath(texPath) as TextureImporter;
-        if (importer != null)
-        {
-            importer.wrapMode = TextureWrapMode.Repeat;
-            importer.mipmapEnabled = true;
-            importer.SaveAndReimport();
-        }
-
-        Texture2D importedTex = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
-
         TerrainLayer layer = AssetDatabase.LoadAssetAtPath<TerrainLayer>(layerPath);
         if (layer == null)
         {
             layer = new TerrainLayer();
             AssetDatabase.CreateAsset(layer, layerPath);
         }
-        layer.diffuseTexture = importedTex;
-        layer.tileSize = new Vector2(60f, 60f);
+        layer.diffuseTexture = bc;
+        layer.normalMapTexture = n;
+        layer.normalScale = 1f;
+        layer.tileSize = new Vector2(tileSize, tileSize);
         EditorUtility.SetDirty(layer);
         AssetDatabase.SaveAssets();
 
         return layer;
+    }
+
+    // 새로 받아온 노멀맵 jpg는 기본값이 Default 타입이라, Normal Map 타입으로 한 번만 바꿔줌 (바위팩 텍스처는 이미 맞게 임포트돼 있어 건드리지 않음)
+    static void EnsureNormalMapImport(string path)
+    {
+        TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+        if (importer == null || importer.textureType == TextureImporterType.NormalMap) return;
+        importer.textureType = TextureImporterType.NormalMap;
+        importer.SaveAndReimport();
     }
 }
