@@ -73,29 +73,58 @@ public class StructureScatterGenerator
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
     }
 
-    // 보유 중인 무료 바위팩의 Cliff 프리팹을 세로로 늘려서 굴뚝으로 사용 + 검은 연기 파티클 + 글로우
+    // 실제 black smoker는 가늘고 들쭉날쭉한 굴뚝 여러 개가 뭉쳐서 자람 -> 바위팩 Cliff/RockGroups 프리팹 2~3개를
+    // 각각 다른 높이로 세로로 늘려 한 덩어리로 배치 + 검게 그을리고 황 침전물 낀 전용 머티리얼 + 연기 파티클 + 글로우
     static GameObject CreateVentPlaceholder(System.Random rng)
     {
         GameObject root = new GameObject("HydrothermalVent");
-        float h = Lerp01(rng, 3f, 6f);
+        float mainHeight = Lerp01(rng, 4f, 7f);
+        int spireCount = rng.Next(2, 4);
 
-        GameObject cliffPrefab = FindCliffPrefab();
-        if (cliffPrefab != null)
+        for (int i = 0; i < spireCount; i++)
         {
-            GameObject chimney = Object.Instantiate(cliffPrefab);
-            chimney.name = "VentChimney";
-            chimney.transform.SetParent(root.transform, false);
-            chimney.transform.localScale = new Vector3(Lerp01(rng, 0.8f, 1.3f), h, Lerp01(rng, 0.8f, 1.3f));
-            chimney.transform.localRotation = Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
+            GameObject prefab = PickVentSpirePrefab(rng);
+            if (prefab == null) continue;
 
-            Material mat = PropScatterGenerator.RockMaterialFor(PropScatterGenerator.RockTextureSetFor(cliffPrefab.name));
-            foreach (var renderer in chimney.GetComponentsInChildren<MeshRenderer>())
+            float h = i == 0 ? mainHeight : mainHeight * Lerp01(rng, 0.45f, 0.8f);
+            GameObject spire = Object.Instantiate(prefab);
+            spire.name = i == 0 ? "VentChimneyMain" : $"VentChimneySub{i}";
+            spire.transform.SetParent(root.transform, false);
+
+            float offsetRadius = i == 0 ? 0f : Lerp01(rng, 1.2f, 2.5f);
+            float angle = (float)rng.NextDouble() * Mathf.PI * 2f;
+            spire.transform.localPosition = new Vector3(Mathf.Cos(angle) * offsetRadius, 0f, Mathf.Sin(angle) * offsetRadius);
+            spire.transform.localScale = new Vector3(Lerp01(rng, 0.7f, 1.1f), h, Lerp01(rng, 0.7f, 1.1f));
+            spire.transform.localRotation = Quaternion.Euler(Lerp01(rng, -4f, 4f), (float)rng.NextDouble() * 360f, Lerp01(rng, -4f, 4f));
+
+            Color tint = Color.Lerp(new Color(0.05f, 0.05f, 0.05f), new Color(0.32f, 0.19f, 0.08f), Lerp01(rng, 0f, 0.4f));
+            Material mat = VentSpireMaterial(PropScatterGenerator.RockTextureSetFor(prefab.name), tint);
+            foreach (var renderer in spire.GetComponentsInChildren<MeshRenderer>())
+                renderer.sharedMaterial = mat;
+        }
+
+        // 굴뚝 밑동에 흩어진 작은 광물 부스러기
+        var rubblePrefabs = PropScatterGenerator.LoadRockPrefabs();
+        int rubbleCount = rng.Next(3, 6);
+        for (int i = 0; i < rubbleCount; i++)
+        {
+            GameObject rp = rubblePrefabs[rng.Next(rubblePrefabs.Length)];
+            if (rp.name.Contains("Cliff") || rp.name.Contains("RockGroups")) continue;
+            GameObject rubble = Object.Instantiate(rp);
+            rubble.name = "VentRubble";
+            rubble.transform.SetParent(root.transform, false);
+            float ra = (float)rng.NextDouble() * Mathf.PI * 2f;
+            float rr = Lerp01(rng, 1.5f, 3.5f);
+            rubble.transform.localPosition = new Vector3(Mathf.Cos(ra) * rr, 0f, Mathf.Sin(ra) * rr);
+            rubble.transform.localScale = Vector3.one * Lerp01(rng, 0.4f, 0.8f);
+            Material mat = VentSpireMaterial(PropScatterGenerator.RockTextureSetFor(rp.name), new Color(0.15f, 0.12f, 0.1f));
+            foreach (var renderer in rubble.GetComponentsInChildren<MeshRenderer>())
                 renderer.sharedMaterial = mat;
         }
 
         GameObject smokeObj = new GameObject("VentSmoke");
         smokeObj.transform.SetParent(root.transform, false);
-        smokeObj.transform.localPosition = new Vector3(0f, h * 1.8f, 0f);
+        smokeObj.transform.localPosition = new Vector3(0f, mainHeight * 1.8f, 0f);
         var ps = smokeObj.AddComponent<ParticleSystem>();
         var main = ps.main;
         main.startColor = new Color(0.05f, 0.05f, 0.05f, 0.8f);
@@ -112,7 +141,7 @@ public class StructureScatterGenerator
 
         GameObject glow = new GameObject("VentGlow");
         glow.transform.SetParent(root.transform, false);
-        glow.transform.localPosition = new Vector3(0f, h * 1.2f, 0f);
+        glow.transform.localPosition = new Vector3(0f, mainHeight * 1.2f, 0f);
         var light = glow.AddComponent<Light>();
         light.type = LightType.Point;
         light.color = new Color(1f, 0.4f, 0.2f);
@@ -125,18 +154,40 @@ public class StructureScatterGenerator
         return root;
     }
 
-    static GameObject[] cliffPrefabCache;
+    static GameObject[] ventSpirePrefabCache;
 
-    static GameObject FindCliffPrefab()
+    static GameObject PickVentSpirePrefab(System.Random rng)
     {
-        if (cliffPrefabCache == null)
+        if (ventSpirePrefabCache == null)
         {
             var all = PropScatterGenerator.LoadRockPrefabs();
-            var cliffs = new List<GameObject>();
-            foreach (var p in all) if (p.name.Contains("Cliff")) cliffs.Add(p);
-            cliffPrefabCache = cliffs.Count > 0 ? cliffs.ToArray() : all;
+            var spires = new List<GameObject>();
+            foreach (var p in all) if (p.name.Contains("Cliff") || p.name.Contains("RockGroups")) spires.Add(p);
+            ventSpirePrefabCache = spires.Count > 0 ? spires.ToArray() : all;
         }
-        return cliffPrefabCache.Length > 0 ? cliffPrefabCache[0] : null;
+        return ventSpirePrefabCache.Length > 0 ? ventSpirePrefabCache[rng.Next(ventSpirePrefabCache.Length)] : null;
+    }
+
+    const string RockPackTextureFolder = "Assets/StylizedRocksPackFREE/Textures/Rocks";
+    static Dictionary<string, Material> ventMatCache = new Dictionary<string, Material>();
+
+    // 장식용 바위와는 별도의 머티리얼 인스턴스로 만들어서, 같은 텍스처를 쓰더라도 주변 바위 색까지 같이 어두워지지 않게 함
+    static Material VentSpireMaterial(string textureSet, Color tint)
+    {
+        string key = $"{textureSet}_{ColorUtility.ToHtmlStringRGB(tint)}";
+        if (ventMatCache.TryGetValue(key, out var cached)) return cached;
+
+        Texture2D bc = AssetDatabase.LoadAssetAtPath<Texture2D>($"{RockPackTextureFolder}/T_RockPack_{textureSet}_BC.tga");
+        Texture2D n = AssetDatabase.LoadAssetAtPath<Texture2D>($"{RockPackTextureFolder}/T_RockPack_{textureSet}_N.tga");
+
+        var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+        if (bc != null) mat.SetTexture("_BaseMap", bc);
+        if (n != null) mat.SetTexture("_BumpMap", n);
+        mat.SetColor("_BaseColor", tint);
+        mat.SetFloat("_Smoothness", 0.15f);
+
+        ventMatCache[key] = mat;
+        return mat;
     }
 
     const string MaritimePrefabFolder = "Assets/Maritime_Heritage/Prefabs";
