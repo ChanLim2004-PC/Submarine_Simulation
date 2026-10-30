@@ -15,8 +15,12 @@ public class DepthZoneSystemEditor : Editor
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("현재 상태 (자동 계산, 읽기 전용)", EditorStyles.boldLabel);
 
+        if (sys.IsDuplicate)
+            EditorGUILayout.HelpBox("이 씬에 수심대 시스템이 이미 있어서 이 컴포넌트는 동작하지 않습니다. 하나만 남겨 주세요.", MessageType.Warning);
+
         using (new EditorGUI.DisabledScope(true))              // 회색으로 표시 (수정 불가)
         {
+            EditorGUILayout.ObjectField("조절 중인 태양", sys.ActiveSun, typeof(Light), true);   // 자동으로 찾은 경우도 표시
             EditorGUILayout.FloatField("표시 수심 (m)", sys.CurrentDepth);
             EditorGUILayout.TextField("수심대", ZoneLabel(sys.CurrentZone));
             EditorGUILayout.ColorField("물색", sys.CurrentWaterColor);
