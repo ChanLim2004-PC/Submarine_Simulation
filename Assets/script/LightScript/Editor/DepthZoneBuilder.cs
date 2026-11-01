@@ -21,6 +21,13 @@ public static class DepthZoneBuilder
             return;
         }
 
+        // 프리팹이 생긴 뒤에 여기서 또 만들면 수심대 시스템이 두 개가 된다
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(UnderwaterSystemBuilder.PrefabPath) != null)
+        {
+            EditorUtility.DisplayDialog("수심대", "UnderwaterSystem 프리팹이 이미 있습니다.\n수심대 시스템은 프리팹에 들어 있으니 메뉴 5를 사용해 주세요.", "확인");
+            return;
+        }
+
         // LightScene이 열려 있는지 확인
         var scene = EditorSceneManager.GetActiveScene();
         if (scene.path != ScenePath)
