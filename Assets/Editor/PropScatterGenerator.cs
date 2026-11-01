@@ -74,6 +74,7 @@ public class PropScatterGenerator
                 prop.transform.SetParent(container.transform, true);
                 prop.transform.position = worldPos;
                 prop.transform.rotation = Quaternion.FromToRotation(Vector3.up, normal) * Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
+                if (isRock) SinkIntoGround(prop, normal, rng);
                 placed++;
             }
 
@@ -102,6 +103,7 @@ public class PropScatterGenerator
                     gravel.transform.SetParent(container.transform, true);
                     gravel.transform.position = gWorldPos;
                     gravel.transform.rotation = Quaternion.FromToRotation(Vector3.up, gNormal) * Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
+                    SinkIntoGround(gravel, gNormal, rng);
                 }
 
                 if (isLandmark)
@@ -123,6 +125,7 @@ public class PropScatterGenerator
                         medium.transform.SetParent(container.transform, true);
                         medium.transform.position = mWorldPos;
                         medium.transform.rotation = Quaternion.FromToRotation(Vector3.up, mNormal) * Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
+                        SinkIntoGround(medium, mNormal, rng);
                     }
                 }
             }
@@ -216,7 +219,7 @@ public class PropScatterGenerator
         GameObject rock = Object.Instantiate(prefab);
         rock.name = name;
 
-        Material mat = RockMaterialFor(RockTextureSetFor(prefab.name));
+        Material mat = TintedRockMaterial(RockTextureSetFor(prefab.name), rng);
         foreach (var renderer in rock.GetComponentsInChildren<MeshRenderer>())
             renderer.sharedMaterial = mat;
 
@@ -229,6 +232,41 @@ public class PropScatterGenerator
         info.displayName = "바위";
 
         return rock;
+    }
+
+    // MaterialPropertyBlock은 런타임 전용 오버라이드라 에디터에서 구워둔 씬을 저장해도 같이
+    // 저장되지 않고 재시작하면 사라지므로, 대신 베이스 머티리얼을 복제한 고유 인스턴스를 만들어
+    // 색만 살짝 다르게 입힌다 (텍스처는 공유하므로 메모리 부담은 작음)
+    static Material TintedRockMaterial(string textureSet, System.Random rng)
+    {
+        Material baseMat = RockMaterialFor(textureSet);
+        Material mat = new Material(baseMat);
+
+        float brightness = Lerp01(rng, 0.82f, 1.08f);
+        float warmShift = Lerp01(rng, -0.04f, 0.04f);
+        mat.SetColor("_BaseColor", new Color(
+            Mathf.Clamp01(brightness + warmShift),
+            Mathf.Clamp01(brightness),
+            Mathf.Clamp01(brightness - warmShift),
+            1f));
+
+        return mat;
+    }
+
+    // 바위 아랫부분이 퇴적물에 살짝 파묻힌 것처럼 보이도록, 지형 노멀 반대 방향으로
+    // 바위 크기(렌더러 바운즈)에 비례한 깊이만큼 가라앉힘 (크면 더 깊게, 작으면 덜)
+    static void SinkIntoGround(GameObject obj, Vector3 normal, System.Random rng)
+    {
+        Bounds? combined = null;
+        foreach (var renderer in obj.GetComponentsInChildren<MeshRenderer>())
+        {
+            if (combined == null) combined = renderer.bounds;
+            else { var b = combined.Value; b.Encapsulate(renderer.bounds); combined = b; }
+        }
+        if (!combined.HasValue) return;
+
+        float sinkDepth = combined.Value.size.y * Lerp01(rng, 0.08f, 0.22f);
+        obj.transform.position -= normal * sinkDepth;
     }
 
     static GameObject CreateRockPlaceholder(System.Random rng, float ruggedness, bool isLandmark = false)
