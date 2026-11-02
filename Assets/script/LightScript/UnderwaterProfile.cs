@@ -48,4 +48,29 @@ public class UnderwaterProfile : ScriptableObject
     public float sunSurfaceIntensity = 1f;       // 수면 태양 세기
     [Tooltip("물속 주변광의 색 (주변광 세기를 곱해서 사용)")]
     public Color ambientColor = new Color(0.55f, 0.7f, 0.8f);   // 물속 주변광 색 (푸른 회색)
+
+    [Header("커스틱스 (바닥에 일렁이는 물결 빛)")]
+    [Tooltip("밝기. 수면 근처 기준이며 햇빛과 같이 유광층 바닥에서 0이 됨")]
+    [Range(0f, 3f)] public float causticIntensity = 0.8f;
+    [Tooltip("무늬 한 칸의 크기 (m)")]
+    [Range(0.2f, 10f)] public float causticScale = 1.5f;
+    [Tooltip("꿈틀거리는 속도")]
+    [Range(0f, 3f)] public float causticSpeed = 0.5f;
+    [Tooltip("카메라에서 이 거리(m)를 넘으면 무늬가 사라짐")]
+    [Range(5f, 100f)] public float causticFadeDistance = 30f;
+
+    [Header("햇빛 줄기")]
+    [Tooltip("밝기. 커스틱스처럼 유광층 바닥에서 0이 됨")]
+    [Range(0f, 5f)] public float shaftIntensity = 1f;
+    [Tooltip("카메라에서 이 거리(m)까지만 계산")]
+    [Range(5f, 80f)] public float shaftDistance = 40f;
+    [Tooltip("줄기 사이 간격 (m)")]
+    [Range(0.5f, 20f)] public float shaftScale = 4f;
+
+    [Header("일렁임")]
+    [Tooltip("화면이 흔들리는 정도. 0이면 끔")]
+    [Range(0f, 0.01f)] public float distortionStrength = 0.003f;
+    [Tooltip("물결 촘촘한 정도")]
+    [Range(1f, 30f)] public float distortionScale = 6f;
+    [Range(0f, 3f)] public float distortionSpeed = 0.6f;
 }
