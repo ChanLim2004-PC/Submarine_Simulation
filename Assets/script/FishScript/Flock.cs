@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Jobs;
@@ -10,7 +9,7 @@ using Unity.Burst;
 public class Flock : MonoBehaviour
 {
     [Header("Spawn Setup")]
-    [SerializeField] private FlockUnit flockUnitPrefab;
+    [SerializeField] private FlockUnit[] flockUnits;
     [SerializeField] private int flockSize;
     [SerializeField] private Vector3 spawnBounds;
 
@@ -77,17 +76,14 @@ public class Flock : MonoBehaviour
     [SerializeField] private float spawnDistanceMax = 10f;  // 재배치될 때 최대 거리
     [SerializeField] private float spawnSpreadRadius = 30f;  // 퍼지는 반경
 
-    [Header("Ocean Layer Depth Settings")]
-    [SerializeField] private float surfaceY = 0f;          // 수면 Y 좌표
-    [SerializeField] private float photicLimit = 200f;      // 유광층 끝 (예: -200m)
-    [SerializeField] private float boundaryLimit = 500f;    // 경계층 끝 (예: -500m)
-    [SerializeField] private float backlitLimit = 1500f;    // 역광측 끝 (예: -1500m)
-    // 그 아래는 전부 무광층(Aphotic)
+    [Header("Ocean Layer Active Range (이 매니저가 켜질 수심 구간)")]
+    [SerializeField] private float minActiveDepth = 0f;    
+    [SerializeField] private float maxActiveDepth = 0f; 
 
     private Vector3 targetWanderPosition;
     private float timer;
-    public float obstacleWeight { get { return _obstacleWeight; } }
 
+    public float obstacleWeight { get { return _obstacleWeight; } }
     public FlockUnit[] allUnits { get; set; }
 
     private void Start()
@@ -105,72 +101,53 @@ public class Flock : MonoBehaviour
         _minSpeed = UnityEngine.Random.Range(1f, 2f);
         _maxSpeed = UnityEngine.Random.Range(2f, 5f);
     }
-    
-    private void depthSpawn(Camera cam)
+    private void DepthSpawn(Camera cam)
     {
-        if (cam != null)
-        {
-            float currentDepth = surfaceY - cam.transform.position.y;
-            currentDepth = Mathf.Max(0f, currentDepth);
+	if (cam == null || allUnits == null) return;
 
-            float targetDensityRatio = 1f;
+	float currentDepth = 0 - cam.transform.position.y;
+	currentDepth = Mathf.Max(0f, currentDepth);
 
-            // 2. 수심에 따른 구간(Layer) 판별 및 밀도 결정
-            if (currentDepth <= photicLimit)
-            {
-                
-                targetDensityRatio = 1.0f; // 100% 다 킴
-            }
-            else if (currentDepth <= boundaryLimit)
-            {
-                
-                // 유광층에서 경계층으로 갈수록 서서히 줄어듦 (1.0 -> 0.5)
-                targetDensityRatio = Mathf.InverseLerp(boundaryLimit, photicLimit, currentDepth) * 0.5f + 0.5f;
-            }
-            else if (currentDepth <= backlitLimit)
-            {
-              
-                // 경계층에서 역광측으로 갈수록 더 줄어듦 (0.5 -> 0.1)
-                targetDensityRatio = Mathf.InverseLerp(backlitLimit, boundaryLimit, currentDepth) * 0.4f + 0.1f;
-            }
-            else
-            {
-               
-                targetDensityRatio = 0.0f; // 심해 무광층은 물고기 끄기!
-            }
+	float densityRatio = 0f;
+	float fadeMargin = 30f; 
 
-            // 3. 계산된 비율에 맞춰 유닛 켜기/끄기 갱신
-            int activeUnitCount = Mathf.RoundToInt(allUnits.Length * targetDensityRatio);
-            for (int i = 0; i < allUnits.Length; i++)
-            {
-                if (allUnits[i] == null) continue;
+	if (currentDepth >= minActiveDepth && currentDepth < maxActiveDepth)
+	{
+	    float fadeIn = Mathf.InverseLerp(minActiveDepth, minActiveDepth + fadeMargin, currentDepth);
 
-                bool shouldBeActive = i < activeUnitCount;
-                if (allUnits[i].gameObject.activeSelf != shouldBeActive)
-                {
-                    allUnits[i].gameObject.SetActive(shouldBeActive);
-                }
-            }
-        }
+	    float fadeOut = Mathf.InverseLerp(maxActiveDepth, maxActiveDepth - fadeMargin, currentDepth);
+
+	    densityRatio = Mathf.Min(fadeIn, fadeOut);
+	}
+
+	int activeCount = Mathf.RoundToInt(allUnits.Length * densityRatio);
+
+	for (int i = 0; i < allUnits.Length; i++)
+	{
+	    if (allUnits[i] != null)
+	    {
+		bool shouldBeActive = i < activeCount;
+		if (allUnits[i].gameObject.activeSelf != shouldBeActive)
+		{
+		    allUnits[i].gameObject.SetActive(shouldBeActive);
+		}
+	    }
+	}
     }
 
     private void moveFlock(Camera cam)
     {
         if (cam == null) return;
 
-        // 타이머를 이용해 일정 시간마다 카메라 주변의 새로운 랜덤 목표 지점(RandomVector)을 갱신
         timer += Time.deltaTime;
         if (timer >= moveInterval || targetWanderPosition == Vector3.zero)
         {
             timer = 0f;
-            // 카메라 위치 기준, 구(Sphere) 안쪽의 랜덤한 오프셋 생성
             Vector3 randomOffset = UnityEngine.Random.insideUnitSphere * wanderRadius;
 
-            // 카메라 정면 앞쪽으로 위치가 잡히도록 기본 오프셋을 더해줄 수도 있음
             targetWanderPosition = cam.transform.position + (cam.transform.forward * 10f) + randomOffset;
         }
 
-        // Flock 매니저 오브젝트를 목표 지점으로 부드럽게 이동시킴 (Lerp 또는 MoveTowards)
         transform.position = Vector3.MoveTowards(transform.position, targetWanderPosition, moveSpeed * Time.deltaTime);
     }
     private void recycleFlock(Camera cam)
@@ -179,27 +156,21 @@ public class Flock : MonoBehaviour
         {
             Transform camTransform = cam.transform;
 
-            // 모든 유닛을 돌면서 카메라와의 거리를 체크
             for (int i = 0; i < allUnits.Length; i++)
             {
                 if (allUnits[i] == null) continue;
 
-                // 유닛과 카메라 사이의 거리 계산
                 float distanceToCam = Vector3.Distance(allUnits[i].myTransform.position, camTransform.position);
 
-                // 만약 유닛이 카메라 뒤로 너무 멀어졌거나 범위를 벗어났다면?
                 if (distanceToCam > maxFollowDistance || distanceToCam < 5f)
                 {
-                    // 카메라 정면 앞쪽의 무작위 새로운 위치 계산
                     float randomDistance = UnityEngine.Random.Range(spawnDistanceMin, spawnDistanceMax);
                     Vector3 basePos = camTransform.position + (camTransform.forward * randomDistance);
                     Vector3 randomOffset = UnityEngine.Random.insideUnitSphere * spawnSpreadRadius;
                     Vector3 newSpawnPos = basePos + randomOffset;
 
-                    // 위치 강제 재배치 (Teleport)
                     allUnits[i].myTransform.position = newSpawnPos;
 
-                    // 유닛의 속도와 방향도 카메라 방향으로 초기화해주면 부드러움
                     allUnits[i].currentVelocity = Vector3.zero;
                     allUnits[i].myTransform.rotation = camTransform.rotation;
                 }
@@ -209,7 +180,7 @@ public class Flock : MonoBehaviour
     private void Update()
     {
         Camera cam = Camera.main;
-        depthSpawn(cam);
+        DepthSpawn(cam);
         recycleFlock(cam);
         moveFlock(cam);
 
@@ -257,10 +228,10 @@ public class Flock : MonoBehaviour
             aligementWeight = aligementWeight,
             boundsWeight = boundsWeight,
             obstacleWeight = obstacleWeight,
-            fovAngle = flockUnitPrefab.FOVAngle,
+            fovAngle = 270f,
             minSpeed = minSpeed,
             maxSpeed = maxSpeed,
-            smoothDamp = flockUnitPrefab.smoothDamp,
+            smoothDamp = 0.1f,
             flockPosition = transform.position,
             deltaTime = Time.deltaTime
         };
@@ -289,17 +260,24 @@ public class Flock : MonoBehaviour
 
     private void GenerateUnits()
     {
+        if (flockUnits == null || flockUnits.Length == 0) return;
+
+        Camera cam = Camera.main;
+        Vector3 spawnCenter = cam != null ? cam.transform.position : transform.position;
+
         allUnits = new FlockUnit[flockSize];
         for (int i = 0; i < flockSize; i++)
         {
-            var randomVector = UnityEngine.Random.insideUnitSphere;
-            randomVector = new Vector3(randomVector.x * spawnBounds.x, randomVector.y * spawnBounds.y, randomVector.z * spawnBounds.z);
-            var spawnPosition = transform.position + randomVector;
-            var rotation = Quaternion.Euler(0, UnityEngine.Random.Range(0, 360), 0);
-            allUnits[i] = Instantiate(flockUnitPrefab, spawnPosition, rotation);
-            allUnits[i].AssignFlock(this);
-            allUnits[i].InitializeSpeed(UnityEngine.Random.Range(minSpeed, maxSpeed));
+            // 이 매니저에 등록된 프리팹들 중 하나를 골라서 생성
+            FlockUnit selectedPrefab = flockUnits[UnityEngine.Random.Range(0, flockUnits.Length)];
+            var pos = spawnCenter + UnityEngine.Random.insideUnitSphere * 20f;
+            
+            var unit = Instantiate(selectedPrefab, pos, Quaternion.identity);
+            unit.AssignFlock(this);
+            unit.InitializeSpeed(UnityEngine.Random.Range(minSpeed, maxSpeed));
+            allUnits[i] = unit;
         }
+
     }
 }
 
