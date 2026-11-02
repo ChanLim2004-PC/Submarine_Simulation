@@ -36,64 +36,72 @@ Shader "Light/UnderwaterFog"
             // 커스틱스 (DepthZoneSystem이 설정, 0이면 꺼짐)
             float _UW_CausticStrength;   // 수면 1 → 유광층 바닥 0
             float4 _UW_SunDir;           // 해 쪽을 향하는 방향
-            float4 _UW_CausticParams;    // x: 무늬 크기(m), y: 속도, z: 무늬가 사라지는 월드 깊이(m), w: 사라지는 거리(m)
-            float4 _UW_ShaftParams;      // x: 햇빛 줄기 세기(0이면 꺼짐), y: 계산 거리(m), z: 줄기 간격(m)
+            float4 _UW_CausticParams;    // z: 무늬가 사라지는 월드 깊이(m), w: 사라지는 거리(m)
+            float4 _UW_ShaftParams;      // x: 햇빛 줄기 세기(0이면 꺼짐), y: 계산 거리(m)
             float4 _UW_SunColor;
             float4 _UW_DistortParams;    // x: 일렁임 세기(0이면 꺼짐), y: 촘촘함, z: 속도
 
-            // 해시 상수는 Dave Hoskins "Hash without Sine" (Shadertoy, MIT)
-            float2 Hash22(float2 p)
+            #include "UnderwaterWaves.hlsl"   // 수면 셰이더와 같은 파도
+
+            // 수면 sxz에서 굴절된 햇빛이 h만큼 아래 수평면에 닿는 위치
+            float2 RefractedHit(float2 sxz, float3 n, float3 L, float h, float eta)
             {
-                float3 p3 = frac(p.xyx * float3(0.1031, 0.1030, 0.0973));
-                p3 += dot(p3, p3.yzx + 33.33);
-                return frac((p3.xx + p3.yz) * p3.zy);
+                float3 t = refract(-L, n, eta);
+                return sxz + t.xz * (h / max(-t.y, 0.05));
             }
 
-            // Worley 노이즈 F2 - F1. 셀 경계 쪽이 커스틱스 선이 된다
-            float CellEdge(float2 p, float time)
+            // 굴절 면적비로 구한 빛 모임 (평평한 물 = 1)
+            // Evan Wallace, "Rendering Realtime Caustics in WebGL" (2011) 방식을 픽셀 단위로
+            float3 CausticFocus(float3 P, float3 L, float t, float footprint)
             {
-                float2 cell = floor(p);
-                float2 f = frac(p);
-                float f1 = 8.0, f2 = 8.0;
-                [unroll] for (int y = -1; y <= 1; y++)
-                [unroll] for (int x = -1; x <= 1; x++)
+                float h = max(_UW_SurfaceY - P.y, 0.0);
+                float invLy = 1.0 / max(L.y, 0.2);
+                // 해의 시직경(약 0.5°)만큼 깊을수록 번지게
+                float e = max(max(0.03, footprint), h * 0.005);
+                // 잔물결 무늬는 수면 근처에서만 (깊으면 지글거림)
+                float ripple = saturate(1.0 - h / 4.0);
+                float unused;
+
+                // 이 점으로 오는 빛이 지난 수면 위치 (한 번 보정)
+                float2 s = P.xz + L.xz * invLy * h;
+                float3 n0 = UW_WaveNormal(s, t, footprint, UW_WAVE_COUNT, ripple, unused);
+                s += P.xz - RefractedHit(s, n0, L, h, 1.0 / 1.333);
+
+                float3 na = UW_WaveNormal(s, t, footprint, UW_WAVE_COUNT, ripple, unused);
+                float3 nb = UW_WaveNormal(s + float2(e, 0.0), t, footprint, UW_WAVE_COUNT, ripple, unused);
+                float3 nc = UW_WaveNormal(s + float2(0.0, e), t, footprint, UW_WAVE_COUNT, ripple, unused);
+
+                // 채널별 굴절률 차이(분산)로 가장자리 색 번짐
+                const float3 eta = 1.0 / float3(1.331, 1.333, 1.338);
+                float3 I;
+                [unroll] for (int ch = 0; ch < 3; ch++)
                 {
-                    float2 o = float2(x, y);
-                    float2 h = Hash22(cell + o);
-                    float2 pt = o + 0.5 + 0.4 * sin(time + 6.2831 * h);
-                    float dist = length(pt - f);
-                    if (dist < f1) { f2 = f1; f1 = dist; }
-                    else if (dist < f2) { f2 = dist; }
+                    float2 a = RefractedHit(s, na, L, h, eta[ch]);
+                    float2 b = RefractedHit(s + float2(e, 0.0), nb, L, h, eta[ch]);
+                    float2 c = RefractedHit(s + float2(0.0, e), nc, L, h, eta[ch]);
+                    float det = ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) / (e * e);
+                    I[ch] = 1.0 / max(abs(det), 0.15);
                 }
-                return f2 - f1;
+                return I;
             }
 
-            // 멀리서 선이 픽셀보다 가늘어지면 깜빡여서 최소 굵기를 둔다
-            float CausticLine(float2 p, float time)
+            // 햇빛 줄기용. 큰 파도 4개만 써서 가볍게
+            float ShaftFocus(float3 P, float3 L, float t)
             {
-                float e = CellEdge(p, time);
-                float w = max(0.12, fwidth(p.x) * 1.5);
-                return pow(1.0 - smoothstep(0.0, w * 3.0, e), 3.0);
-            }
-
-            // 두 겹을 섞고, 채널마다 살짝 어긋나게 해서 색 번짐
-            float3 Caustics(float2 p, float time)
-            {
-                p += 0.25 * sin(p.yx * 0.8 + time * 0.3);   // 격자 티 안 나게
-                float2 q = p * 1.37 + 17.0;
-                float3 c;
-                c.r = CausticLine(p + 0.015, time) * 0.6 + CausticLine(q + 0.015, time * 1.3) * 0.4;
-                c.g = CausticLine(p, time)         * 0.6 + CausticLine(q, time * 1.3)         * 0.4;
-                c.b = CausticLine(p - 0.015, time) * 0.6 + CausticLine(q - 0.015, time * 1.3) * 0.4;
-                return c * c;
-            }
-
-            // 햇빛 줄기용 (커스틱스보다 넓고 부드럽게)
-            float ShaftPattern(float2 p, float time)
-            {
-                p += 0.25 * sin(p.yx * 0.8 + time * 0.3);
-                float b = 1.0 - smoothstep(0.0, 0.45, CellEdge(p, time * 0.5));
-                return b * b;
+                float h = max(_UW_SurfaceY - P.y, 0.0);
+                float invLy = 1.0 / max(L.y, 0.2);
+                const float e = 0.25;
+                const float eta = 1.0 / 1.333;
+                float unused;
+                float2 s = P.xz + L.xz * invLy * h;
+                float3 na = UW_WaveNormal(s, t, 0.0, UW_GEOMETRY_WAVES, 0.0, unused);
+                float3 nb = UW_WaveNormal(s + float2(e, 0.0), t, 0.0, UW_GEOMETRY_WAVES, 0.0, unused);
+                float3 nc = UW_WaveNormal(s + float2(0.0, e), t, 0.0, UW_GEOMETRY_WAVES, 0.0, unused);
+                float2 a = RefractedHit(s, na, L, h, eta);
+                float2 b = RefractedHit(s + float2(e, 0.0), nb, L, h, eta);
+                float2 c = RefractedHit(s + float2(0.0, e), nc, L, h, eta);
+                float det = ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) / (e * e);
+                return 1.0 / max(abs(det), 0.15);
             }
 
             // 레이마칭 줄무늬 방지용 지터. Jorge Jimenez, Interleaved Gradient Noise (SIGGRAPH 2014)
@@ -111,7 +119,7 @@ Shader "Light/UnderwaterFog"
                 return 0.25 + 0.75 * hg;
             }
 
-            // 시선 방향 레이마칭. 수면 무늬가 밝은 곳 아래에 있는 지점만 산란광을 더한다
+            // 시선 방향 레이마칭. 빛이 모인 곳일수록 산란광이 많다
             float3 SunShafts(float3 camPos, float3 dir, float maxDist, float2 pixel)
             {
                 const int STEPS = 24;
@@ -119,17 +127,16 @@ Shader "Light/UnderwaterFog"
                 float invLy = 1.0 / max(L.y, 0.2);
                 float stepLen = maxDist / STEPS;
                 float jitter = InterleavedGradientNoise(pixel);
-                float time = _Time.y * _UW_CausticParams.y;
 
                 float3 sum = 0.0;
                 [loop] for (int i = 0; i < STEPS; i++)
                 {
                     float s = (i + jitter) * stepLen;
                     float3 p = camPos + dir * s;
-                    if (p.y > 0.0) continue;   // 수면 위는 건너뜀
+                    if (p.y > _UW_SurfaceY) continue;   // 수면 위는 건너뜀
 
-                    float beam = ShaftPattern((p.xz - p.y * L.xz * invLy) / _UW_ShaftParams.z, time);
-                    float3 fromSurface = exp(-_UW_Sigma * (-p.y * invLy));   // 수면 → 여기
+                    float beam = max(ShaftFocus(p, L, _Time.y) - 0.7, 0.0);
+                    float3 fromSurface = exp(-_UW_Sigma * ((_UW_SurfaceY - p.y) * invLy));   // 수면 → 여기
                     float3 toCamera = exp(-_UW_Sigma * s);                    // 여기 → 카메라
                     sum += beam * fromSurface * toCamera;
                 }
@@ -180,14 +187,15 @@ Shader "Light/UnderwaterFog"
                     float3 L = normalize(_UW_SunDir.xyz);
                     float3 N = SampleSceneNormals(uv);
                     float facing = isFar ? 0.0 : saturate(dot(N, L));
+                    float footprint = max(fwidth(worldPos.x), fwidth(worldPos.z));
 
-                    // 햇빛 방향으로 수면까지 올라간 위치 기준
-                    float2 proj = worldPos.xz - worldPos.y * L.xz / max(L.y, 0.2);
-                    float depthFade = saturate(1.0 + worldPos.y / max(_UW_CausticParams.z, 0.01));
+                    float depthFade = saturate(1.0 + (worldPos.y - _UW_SurfaceY) / max(_UW_CausticParams.z, 0.01));
                     float distFade = 1.0 - smoothstep(_UW_CausticParams.w * 0.5, _UW_CausticParams.w, d);
+                    float amount = _UW_CausticStrength * facing * depthFade * distFade;
 
-                    float3 c = Caustics(proj / max(_UW_CausticParams.x, 0.01), _Time.y * _UW_CausticParams.y);
-                    src.rgb += src.rgb * c * (_UW_CausticStrength * facing * depthFade * distFade * 2.0);
+                    // 모인 곳은 밝게, 퍼진 곳은 어둡게 (평균 밝기 유지)
+                    float3 I = CausticFocus(worldPos, L, _Time.y, footprint);
+                    src.rgb *= max(lerp(1.0, I, amount), 0.0);
                 }
 
                 // 3) 채널별 투과율 t = exp(-σ·d)
