@@ -44,11 +44,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23e8c92eac2a95f43a721102b07ccbdf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Flock
-  flockUnitPrefab: {fileID: -8909912604268614333, guid: a20ffe8d10c78534cafd817b38517e05, type: 3}
+  flockUnits:
+  - {fileID: -8909912604268614333, guid: a20ffe8d10c78534cafd817b38517e05, type: 3}
   flockSize: 100
   spawnBounds: {x: 1, y: 0.5, z: 1}
-  _minSpeed: 1
-  _maxSpeed: 3
+  _minSpeed: 4.2
+  _maxSpeed: 6.76
   _cohesionDistance: 1
   _avoidanceDistance: 1
   _aligementDistance: 1
@@ -67,5 +68,5 @@ MonoBehaviour:
   spawnDistanceMax: 30
   spawnSpreadRadius: 15
   surfaceY: 0
-  fullLifeDepth: 20
-  barrenDepth: 150
+  minActiveDepth: 0
+  maxActiveDepth: 50
