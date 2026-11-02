@@ -75,7 +75,7 @@ public static class UnderwaterFogBuilder
 
         feature.injectionPoint = FullScreenPassRendererFeature.InjectionPoint.BeforeRenderingTransparents; // 불투명 물체 다음, 반투명 물체 전에 적용
         feature.fetchColorBuffer = true;                                          // 원래 화면 색을 _BlitTexture로 받음
-        feature.requirements = ScriptableRenderPassInput.Depth;                  // 깊이 텍스처 필요
+        feature.requirements = ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Normal;   // 깊이 + 노멀 (커스틱스가 면 방향을 씀)
         feature.passMaterial = mat;                                               // 위 머티리얼 사용
         feature.passIndex = 0;                                                    // 셰이더의 첫 번째 Pass
         feature.SetActive(true);                                                  // 켜기

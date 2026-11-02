@@ -21,6 +21,12 @@ public class DepthZoneSystem : MonoBehaviour
     static readonly int SigmaId = Shader.PropertyToID("_UW_Sigma");            // 감쇠 변수 ID
     static readonly int WaterColorId = Shader.PropertyToID("_UW_WaterColor");  // 물색 변수 ID
     static readonly int EnabledId = Shader.PropertyToID("_UW_Enabled");        // 효과 켜짐 변수 ID (효과 토글 키도 이 값을 씀)
+    static readonly int CausticStrengthId = Shader.PropertyToID("_UW_CausticStrength");
+    static readonly int SunDirId = Shader.PropertyToID("_UW_SunDir");
+    static readonly int CausticParamsId = Shader.PropertyToID("_UW_CausticParams");
+    static readonly int ShaftParamsId = Shader.PropertyToID("_UW_ShaftParams");
+    static readonly int SunColorId = Shader.PropertyToID("_UW_SunColor");
+    static readonly int DistortParamsId = Shader.PropertyToID("_UW_DistortParams");
 
     static readonly List<DepthZoneSystem> enabledSystems = new List<DepthZoneSystem>();  // 중복 체크용
 
@@ -99,6 +105,9 @@ public class DepthZoneSystem : MonoBehaviour
 #endif
         if (Instance == this) Instance = null;               // 등록 해제
         Shader.SetGlobalFloat(EnabledId, 0f);                // 수중 감쇠 효과 끄기 → 원래 화면
+        Shader.SetGlobalFloat(CausticStrengthId, 0f);
+        Shader.SetGlobalVector(ShaftParamsId, Vector4.zero);
+        Shader.SetGlobalVector(DistortParamsId, Vector4.zero);
         RestoreOriginals();
     }
 
@@ -162,6 +171,20 @@ public class DepthZoneSystem : MonoBehaviour
             activeSun.intensity = CurrentSunIntensity;
             activeSun.enabled = CurrentSunIntensity > 0.001f;
         }
+
+        // 커스틱스·햇빛 줄기는 햇빛 세기를 따라간다
+        float sunRatio = CurrentSunIntensity / Mathf.Max(0.001f, profile.sunSurfaceIntensity);
+        Shader.SetGlobalFloat(CausticStrengthId, activeSun != null ? sunRatio * profile.causticIntensity : 0f);
+        if (activeSun != null) Shader.SetGlobalVector(SunDirId, -activeSun.transform.forward);
+        float fadeWorldDepth = profile.photicBottom / Mathf.Max(0.0001f, depthSettings.depthScale);   // 표시 수심 → 월드 깊이
+        Shader.SetGlobalVector(CausticParamsId, new Vector4(profile.causticScale, profile.causticSpeed, fadeWorldDepth, profile.causticFadeDistance));
+
+        float shaft = activeSun != null ? sunRatio * profile.shaftIntensity : 0f;
+        Shader.SetGlobalVector(ShaftParamsId, new Vector4(shaft, profile.shaftDistance, profile.shaftScale, 0f));
+        if (activeSun != null) Shader.SetGlobalVector(SunColorId, activeSun.color.linear);
+
+        // 일렁임은 수심과 상관없이
+        Shader.SetGlobalVector(DistortParamsId, new Vector4(profile.distortionStrength, profile.distortionScale, profile.distortionSpeed, 0f));
 
         // 8) 수심대 판정 (경계 기준, 블렌드 없이) + 바뀌면 알림
         DepthZone zone = CurrentDepth < profile.photicBottom ? DepthZone.Photic
