@@ -49,13 +49,20 @@ public class UnderwaterProfile : ScriptableObject
     [Tooltip("물속 주변광의 색 (주변광 세기를 곱해서 사용)")]
     public Color ambientColor = new Color(0.55f, 0.7f, 0.8f);   // 물속 주변광 색 (푸른 회색)
 
+    [Header("수면 파도 (수면, 커스틱스, 햇빛 줄기가 같이 씀)")]
+    [Tooltip("파도 높이 배율")]
+    [Range(0f, 4f)] public float waveHeight = 2.22f;
+    [Tooltip("파장 배율. 작을수록 촘촘함")]
+    [Range(0.2f, 4f)] public float waveLength = 2.62f;
+    [Range(0f, 3f)] public float waveSpeed = 0.2f;
+    [Tooltip("0이면 둥근 사인파, 1에 가까울수록 마루가 뾰족함")]
+    [Range(0f, 1f)] public float waveChoppiness = 0.235f;
+    [Range(0f, 3f)] public float rippleStrength = 0.38f;
+    [Range(0.2f, 4f)] public float rippleScale = 3.78f;
+
     [Header("커스틱스 (바닥에 일렁이는 물결 빛)")]
-    [Tooltip("밝기. 수면 근처 기준이며 햇빛과 같이 유광층 바닥에서 0이 됨")]
+    [Tooltip("무늬 대비. 수면 근처 기준이며 햇빛과 같이 유광층 바닥에서 0이 됨")]
     [Range(0f, 3f)] public float causticIntensity = 0.8f;
-    [Tooltip("무늬 한 칸의 크기 (m)")]
-    [Range(0.2f, 10f)] public float causticScale = 1.5f;
-    [Tooltip("꿈틀거리는 속도")]
-    [Range(0f, 3f)] public float causticSpeed = 0.5f;
     [Tooltip("카메라에서 이 거리(m)를 넘으면 무늬가 사라짐")]
     [Range(5f, 100f)] public float causticFadeDistance = 30f;
 
@@ -64,8 +71,6 @@ public class UnderwaterProfile : ScriptableObject
     [Range(0f, 5f)] public float shaftIntensity = 1f;
     [Tooltip("카메라에서 이 거리(m)까지만 계산")]
     [Range(5f, 80f)] public float shaftDistance = 40f;
-    [Tooltip("줄기 사이 간격 (m)")]
-    [Range(0.5f, 20f)] public float shaftScale = 4f;
 
     [Header("일렁임")]
     [Tooltip("화면이 흔들리는 정도. 0이면 끔")]

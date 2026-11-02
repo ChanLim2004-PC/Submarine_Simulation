@@ -27,6 +27,9 @@ public class DepthZoneSystem : MonoBehaviour
     static readonly int ShaftParamsId = Shader.PropertyToID("_UW_ShaftParams");
     static readonly int SunColorId = Shader.PropertyToID("_UW_SunColor");
     static readonly int DistortParamsId = Shader.PropertyToID("_UW_DistortParams");
+    static readonly int SurfaceYId = Shader.PropertyToID("_UW_SurfaceY");
+    static readonly int WaveParamsId = Shader.PropertyToID("_UW_WaveParams");
+    static readonly int RippleParamsId = Shader.PropertyToID("_UW_RippleParams");
 
     static readonly List<DepthZoneSystem> enabledSystems = new List<DepthZoneSystem>();  // 중복 체크용
 
@@ -159,6 +162,7 @@ public class DepthZoneSystem : MonoBehaviour
         Shader.SetGlobalVector(SigmaId, CurrentSigma);                    // 감쇠
         Shader.SetGlobalVector(WaterColorId, colorLinear);                // 물색 (리니어)
         Shader.SetGlobalFloat(EnabledId, 1f);                             // 효과 켜기
+        Shader.SetGlobalFloat(SurfaceYId, depthSettings.surfaceY);       // 수면 높이
 
         // 6) 적용 — 주변광 (단색 모드로 바꿔 세기를 바로 반영)
         RenderSettings.ambientMode = AmbientMode.Flat;
@@ -177,10 +181,12 @@ public class DepthZoneSystem : MonoBehaviour
         Shader.SetGlobalFloat(CausticStrengthId, activeSun != null ? sunRatio * profile.causticIntensity : 0f);
         if (activeSun != null) Shader.SetGlobalVector(SunDirId, -activeSun.transform.forward);
         float fadeWorldDepth = profile.photicBottom / Mathf.Max(0.0001f, depthSettings.depthScale);   // 표시 수심 → 월드 깊이
-        Shader.SetGlobalVector(CausticParamsId, new Vector4(profile.causticScale, profile.causticSpeed, fadeWorldDepth, profile.causticFadeDistance));
+        Shader.SetGlobalVector(CausticParamsId, new Vector4(0f, 0f, fadeWorldDepth, profile.causticFadeDistance));
+        Shader.SetGlobalVector(WaveParamsId, new Vector4(profile.waveHeight, profile.waveLength, profile.waveSpeed, profile.waveChoppiness));
+        Shader.SetGlobalVector(RippleParamsId, new Vector4(profile.rippleStrength, profile.rippleScale, 0f, 0f));
 
         float shaft = activeSun != null ? sunRatio * profile.shaftIntensity : 0f;
-        Shader.SetGlobalVector(ShaftParamsId, new Vector4(shaft, profile.shaftDistance, profile.shaftScale, 0f));
+        Shader.SetGlobalVector(ShaftParamsId, new Vector4(shaft, profile.shaftDistance, 0f, 0f));
         if (activeSun != null) Shader.SetGlobalVector(SunColorId, activeSun.color.linear);
 
         // 일렁임은 수심과 상관없이
