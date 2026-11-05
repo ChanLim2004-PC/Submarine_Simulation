@@ -42,22 +42,35 @@ public class RockCrustGenerator
             Bounds bounds = renderers[0].bounds;
             foreach (var r in renderers) bounds.Encapsulate(r.bounds);
 
+            // 레이캐스트로 실제 바위 표면 위치를 찾기 위해 임시 콜라이더를 붙였다가 끝나면 제거
+            var tempColliders = new List<Collider>();
+            foreach (var mf in rockT.GetComponentsInChildren<MeshFilter>())
+            {
+                if (mf.sharedMesh != null && mf.GetComponent<Collider>() == null)
+                    tempColliders.Add(mf.gameObject.AddComponent<MeshCollider>());
+            }
+
             int blobCount = rockT.name == "Rock_Landmark" ? rng.Next(2, 4) : 1;
+            int blobsMade = 0;
             for (int i = 0; i < blobCount; i++)
             {
-                GameObject blob = CreateCrustBlob(crustMat);
-                blob.transform.SetParent(container.transform, true);
+                float ox = Lerp01(rng, -0.3f, 0.3f) * bounds.size.x;
+                float oz = Lerp01(rng, -0.3f, 0.3f) * bounds.size.z;
+                Vector3 rayStart = new Vector3(bounds.center.x + ox, bounds.max.y + 1f, bounds.center.z + oz);
 
-                float ox = Lerp01(rng, -0.35f, 0.35f) * bounds.size.x;
-                float oz = Lerp01(rng, -0.35f, 0.35f) * bounds.size.z;
-                float topY = bounds.max.y - bounds.size.y * Lerp01(rng, 0f, 0.25f);
-                blob.transform.position = new Vector3(bounds.center.x + ox, topY, bounds.center.z + oz);
-                blob.transform.rotation = Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
-
-                float scale = Lerp01(rng, 0.18f, 0.4f) * Mathf.Max(bounds.size.x, bounds.size.z) * 0.5f;
-                blob.transform.localScale = new Vector3(scale, scale * 0.25f, scale);
+                if (Physics.Raycast(rayStart, Vector3.down, out RaycastHit hit, bounds.size.y + 2f)
+                    && hit.collider.transform.IsChildOf(rockT))
+                {
+                    GameObject blob = CreateCrustBlob(crustMat, rng);
+                    blob.transform.SetParent(container.transform, true);
+                    blob.transform.position = hit.point + hit.normal * 0.03f;
+                    blob.transform.rotation = Quaternion.FromToRotation(Vector3.up, hit.normal) * Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
+                    blobsMade++;
+                }
             }
-            placed++;
+
+            foreach (var c in tempColliders) Object.DestroyImmediate(c);
+            if (blobsMade > 0) placed++;
         }
 
         Debug.Log($"[모래 크러스트] 바위 {placed}개에 적용 완료.");
@@ -74,12 +87,16 @@ public class RockCrustGenerator
         return mat;
     }
 
-    static GameObject CreateCrustBlob(Material mat)
+    // 바위 크기에 비례시키지 않고 작은 고정 범위로 제한 (큰 바위 군집에서 거대한 덩어리가 생기는 것을 방지)
+    static GameObject CreateCrustBlob(Material mat, System.Random rng)
     {
         GameObject blob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         blob.name = "SandCrust";
         Object.DestroyImmediate(blob.GetComponent<Collider>());
         blob.GetComponent<MeshRenderer>().sharedMaterial = mat;
+
+        float scale = Lerp01(rng, 0.25f, 0.6f);
+        blob.transform.localScale = new Vector3(scale, scale * 0.3f, scale);
         return blob;
     }
 
