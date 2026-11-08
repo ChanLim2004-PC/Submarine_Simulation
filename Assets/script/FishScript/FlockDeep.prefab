@@ -46,21 +46,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Flock
   flockUnits:
   - {fileID: -8160879897212621654, guid: b3b0213588f6c574191a2b91e4cf3dbb, type: 3}
-  flockSize: 3
+  flockSize: 5
   spawnBounds: {x: 1, y: 0.5, z: 1}
-  _minSpeed: 4.2
-  _maxSpeed: 6.76
-  _cohesionDistance: 1
-  _avoidanceDistance: 1
-  _aligementDistance: 1
+  _minSpeed: 2
+  _maxSpeed: 4
+  _cohesionDistance: 0
+  _avoidanceDistance: 10
+  _aligementDistance: 0
   _obstacleDistance: 1
-  _boundsDistance: 1
-  _cohesionWeight: 1
-  _avoidanceWeight: 1
-  _aligementWeight: 1
-  _boundsWeight: 1
+  _boundsDistance: 100
+  _cohesionWeight: 0
+  _avoidanceWeight: 7
+  _aligementWeight: 0
+  _boundsWeight: 0
   _obstacleWeight: 1
-  moveInterval: 3
+  moveInterval: 2
   wanderRadius: 50
   moveSpeed: 5
   maxFollowDistance: 35

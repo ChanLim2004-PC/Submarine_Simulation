@@ -269,9 +269,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b2dc8ba85611fc4095f4aae162347da, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlockSpawner
-  flockUnitPrefab: {fileID: 5378970300970570933, guid: 024787851a3ebdb4fa2ede50ca2c87b9, type: 3}
-  surfaceUnitPrefab: {fileID: 0}
-  underWaterUnitPrefab: {fileID: 0}
+  flockPrefabs:
+  - {fileID: 5378970300970570933, guid: 024787851a3ebdb4fa2ede50ca2c87b9, type: 3}
+  - {fileID: 5378970300970570933, guid: 786a67850d7407b49997bb23ece6c7f1, type: 3}
   spawnCount: 5
   spawnDistanceMin: 10
   spawnDistanceMax: 100
@@ -554,6 +554,10 @@ PrefabInstance:
     - target: {fileID: 6126489523421630347, guid: be8db33892b3e5a4fa6aa0267d2cba39, type: 3}
       propertyPath: m_Name
       value: UnderwaterSystem
+      objectReference: {fileID: 0}
+    - target: {fileID: 6126489523421630347, guid: be8db33892b3e5a4fa6aa0267d2cba39, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8573464797872717155, guid: be8db33892b3e5a4fa6aa0267d2cba39, type: 3}
       propertyPath: m_LocalPosition.x

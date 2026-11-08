@@ -89,18 +89,8 @@ public class Flock : MonoBehaviour
     private void Start()
     {
         GenerateUnits();
-        //SetRandomFlockValues();
     }
 
-    private void SetRandomFlockValues()
-    {
-        _boundsDistance = UnityEngine.Random.Range(5f, 30f);
-        _cohesionWeight = UnityEngine.Random.Range(1f, 10f);
-        _cohesionWeight = UnityEngine.Random.Range(1f, 10f);
-        _avoidanceWeight = UnityEngine.Random.Range(1f, 10f);
-        _minSpeed = UnityEngine.Random.Range(1f, 2f);
-        _maxSpeed = UnityEngine.Random.Range(2f, 5f);
-    }
     private void DepthSpawn(Camera cam)
     {
 	if (cam == null || allUnits == null) return;
@@ -108,16 +98,23 @@ public class Flock : MonoBehaviour
 	float currentDepth = 0 - cam.transform.position.y;
 	currentDepth = Mathf.Max(0f, currentDepth);
 
-	float densityRatio = 0f;
-	float fadeMargin = 30f; 
+	float densityRatio;
+	float fadeMargin = 20f; 
 
 	if (currentDepth >= minActiveDepth && currentDepth < maxActiveDepth)
 	{
-	    float fadeIn = Mathf.InverseLerp(minActiveDepth, minActiveDepth + fadeMargin, currentDepth);
-
-	    float fadeOut = Mathf.InverseLerp(maxActiveDepth, maxActiveDepth - fadeMargin, currentDepth);
-
-	    densityRatio = Mathf.Min(fadeIn, fadeOut);
+	    if (currentDepth >= maxActiveDepth - fadeMargin)
+	    {
+		densityRatio = Mathf.InverseLerp(maxActiveDepth, maxActiveDepth - fadeMargin, currentDepth);
+	    }
+	    else
+	    {
+		densityRatio = 1.0f;
+	    }
+	}
+	else
+	{
+	    densityRatio = 0f; 
 	}
 
 	int activeCount = Mathf.RoundToInt(allUnits.Length * densityRatio);
