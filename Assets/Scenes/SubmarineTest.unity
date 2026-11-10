@@ -119,6 +119,11 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!4 &2244483 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8365286160844193105, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
+  m_PrefabInstance: {fileID: 1175351083}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &540688580
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1108,7 +1113,7 @@ MonoBehaviour:
   minPitch: -30
   maxPitch: 70
   viewMode: {fileID: 1722300717}
-  firstPersonAnchor: {fileID: 0}
+  firstPersonAnchor: {fileID: 2244483}
   firstPersonLookSpeed: 3
   maxLookYaw: 90
   maxLookPitch: 60
