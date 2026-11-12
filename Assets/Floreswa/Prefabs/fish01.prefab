@@ -107,4 +107,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlockUnit
   _FOVAngle: 270
-  _smoothDamp: 0.1
+  _smoothDamp: 0.5
