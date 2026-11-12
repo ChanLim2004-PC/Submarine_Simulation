@@ -67,5 +67,5 @@ MonoBehaviour:
   spawnDistanceMin: 10
   spawnDistanceMax: 30
   spawnSpreadRadius: 15
-  minActiveDepth: 60
-  maxActiveDepth: 100
+  minActiveDepth: 100
+  maxActiveDepth: 150

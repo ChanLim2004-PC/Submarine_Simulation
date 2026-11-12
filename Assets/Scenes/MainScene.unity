@@ -35307,7 +35307,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.8080702, g: 0.82503366, b: 0.84199715, a: 1}
-    - _Color: {r: 0.8080701, g: 0.82503366, b: 0.84199715, a: 1}
+    - _Color: {r: 0.8080702, g: 0.82503366, b: 0.84199715, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -44910,7 +44910,6 @@ GameObject:
   - component: {fileID: 89225297}
   - component: {fileID: 89225296}
   - component: {fileID: 89225295}
-  - component: {fileID: 89225299}
   - component: {fileID: 89225300}
   m_Layer: 0
   m_Name: "Main Camera (\uC784\uC2DC)"
@@ -45037,25 +45036,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &89225299
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 89225294}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0b2dc8ba85611fc4095f4aae162347da, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FlockSpawner
-  flockPrefabs:
-  - {fileID: 5378970300970570933, guid: 024787851a3ebdb4fa2ede50ca2c87b9, type: 3}
-  - {fileID: 5378970300970570933, guid: 786a67850d7407b49997bb23ece6c7f1, type: 3}
-  spawnCount: 5
-  spawnDistanceMin: 10
-  spawnDistanceMax: 100
-  spawnSpreadRadius: 30
 --- !u!114 &89225300
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -107974,8 +107954,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -108072,7 +108054,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.22, g: 0.26, b: 0.24, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.21999997, g: 0.25999996, b: 0.23999995, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -173272,8 +173254,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -173370,7 +173354,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.28, g: 0.2, b: 0.12, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.27999997, g: 0.19999996, b: 0.11999995, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -234008,7 +233992,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 444826728665006464, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -203.08153
+      value: -30
       objectReference: {fileID: 0}
     - target: {fileID: 444826728665006464, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
       propertyPath: m_LocalPosition.z
@@ -234049,7 +234033,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5600184360482421582, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1915218486}
   m_SourcePrefab: {fileID: 100100000, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
 --- !u!1 &466826411
 GameObject:
@@ -362887,8 +362874,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -362985,7 +362974,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.35, g: 0.18, b: 0.08, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.34999996, g: 0.17999998, b: 0.079999976, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -625954,7 +625943,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4725159170433929845, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
   m_PrefabInstance: {fileID: 466751334}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1915218477}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 51b023c8152a02a4ca0f463bccae2614, type: 3}
@@ -940052,6 +940041,31 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1915100693}
   m_Mesh: {fileID: -1668853845084103859, guid: 4d0700910d72ffe46a27ff9a08ad2769, type: 3}
+--- !u!1 &1915218477 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5600184360482421582, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
+  m_PrefabInstance: {fileID: 466751334}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1915218486
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1915218477}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b2dc8ba85611fc4095f4aae162347da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlockSpawner
+  flockPrefabs:
+  - {fileID: 5378970300970570933, guid: 024787851a3ebdb4fa2ede50ca2c87b9, type: 3}
+  - {fileID: 5378970300970570933, guid: 878c581b726474643b1b55882d46da4e, type: 3}
+  - {fileID: 5378970300970570933, guid: 786a67850d7407b49997bb23ece6c7f1, type: 3}
+  spawnCount: 20
+  spawnDistanceMin: 100
+  spawnDistanceMax: 150
+  spawnSpreadRadius: 30
 --- !u!1 &1915600385
 GameObject:
   m_ObjectHideFlags: 0

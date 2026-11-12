@@ -16,6 +16,7 @@ public class FlockSpawner : MonoBehaviour
     {
         SpawnFlockAroundCamera();
     }
+
     void SpawnFlockAroundCamera()
     {
         Camera cam = Camera.main;
@@ -30,15 +31,17 @@ public class FlockSpawner : MonoBehaviour
 
         for (int i = 0; i < spawnCount; i++)
         {
-	    GameObject selectedPrefab;
-	    if(i < spawnCount-1){
-		selectedPrefab = flockPrefabs[Random.Range(0, flockPrefabs.Length - 2)];
-	    }
-	    //flock deep는 언제나 한개
-	    else{
-		selectedPrefab = flockPrefabs[flockPrefabs.Length -1];
-	    }
+            GameObject selectedPrefab;
 
+            if (i == spawnCount - 1 && flockPrefabs.Length >= 3)
+            {
+                selectedPrefab = flockPrefabs[flockPrefabs.Length - 1];
+            }
+            else
+            {
+                int randomRangeMax = Mathf.Max(1, flockPrefabs.Length - 1);
+                selectedPrefab = flockPrefabs[Random.Range(0, randomRangeMax)];
+            }
 
             float randomDistance = Random.Range(spawnDistanceMin, spawnDistanceMax);
             Vector3 baseSpawnPos = camTransform.position + (camTransform.forward * randomDistance);
