@@ -26,10 +26,10 @@ public class SearchLightVisual : MonoBehaviour
             systems.LightChanged -= OnLightChanged;
     }
 
-    // TODO(빛 담당): 여기에 실제 빛 구현을 넣을 것
-    // isOn = true면 켜기, false면 끄기
+    // 자식으로 달린 탐조등(Searchlight 프리팹)을 켜고 끈다
     private void OnLightChanged(bool isOn)
     {
-        Debug.Log($"[SearchLight] {(isOn ? "ON" : "OFF")} (빛 미구현)");
+        foreach (var light in GetComponentsInChildren<SearchlightController>(true))
+            light.SetOn(isOn);
     }
 }
