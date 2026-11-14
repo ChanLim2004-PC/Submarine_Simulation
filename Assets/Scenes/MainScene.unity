@@ -44911,6 +44911,7 @@ GameObject:
   - component: {fileID: 89225296}
   - component: {fileID: 89225295}
   - component: {fileID: 89225300}
+  - component: {fileID: 7301100010}
   m_Layer: 0
   m_Name: "Main Camera (\uC784\uC2DC)"
   m_TagString: MainCamera
@@ -1060442,6 +1060443,19 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1166219258020691715, guid: 8e51256eeaba05f4497600180158f0f7, type: 3}
   m_PrefabInstance: {fileID: 7301100002}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &7301100010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 89225294}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa8b901335414813a0343903f14122a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KeepCameraUnderwater
+  extraMargin: 0.5
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
