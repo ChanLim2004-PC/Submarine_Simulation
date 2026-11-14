@@ -133,6 +133,7 @@ GameObject:
   - component: {fileID: 89225295}
   - component: {fileID: 89225299}
   - component: {fileID: 89225300}
+  - component: {fileID: 89225301}
   m_Layer: 0
   m_Name: "Main Camera (\uC784\uC2DC)"
   m_TagString: MainCamera
@@ -306,6 +307,29 @@ MonoBehaviour:
   maxLookYaw: 90
   maxLookPitch: 60
   hideInFirstPerson: []
+--- !u!114 &89225301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 89225294}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84a6687b5ddd2494ca0c1f062d216756, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SubmarineSpeedFeedback
+  submarine: {fileID: 0}
+  targetCamera: {fileID: 0}
+  maxSpeedReference: 6
+  smoothing: 3
+  maxFovAdd: 10
+  enableShake: 1
+  shakeAmplitude: 0.03
+  shakeFrequency: 18
+  particles: {fileID: 0}
+  minEmission: 20
+  maxEmission: 120
 --- !u!1001 &341038315
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -481,6 +505,11 @@ PrefabInstance:
     - target: {fileID: 2139436424324994542, guid: 5de52d3363cee2640b348a96d43d15be, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2141766434666387583, guid: 5de52d3363cee2640b348a96d43d15be, type: 3}
+      propertyPath: m_text
+      value: "[F] \uC2A4\uCE94(\uAE38\uAC8C)   [J] \uC784\uBB34   [K] \uB3C4\uAC10  
+        [L] \uD0D0\uC870\uB4F1   [V] 3\uC778\uCE6D "
       objectReference: {fileID: 0}
     - target: {fileID: 2219823077642467267, guid: 5de52d3363cee2640b348a96d43d15be, type: 3}
       propertyPath: m_AnchorMax.y
@@ -1065,15 +1094,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 444826728665006464, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -21.4196
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 444826728665006464, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -203.08153
+      value: -40
       objectReference: {fileID: 0}
     - target: {fileID: 444826728665006464, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -18.07717
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 444826728665006464, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1103,13 +1132,34 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1037754269718864370, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
+      propertyPath: scanDistance
+      value: 20
+      objectReference: {fileID: 0}
     - target: {fileID: 5600184360482421582, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
       propertyPath: m_Name
       value: Submarine
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    - target: {fileID: 8325363781394102257, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
+      propertyPath: m_Size.y
+      value: 2.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8325363781394102257, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
+      propertyPath: m_Center.y
+      value: 0.62
+      objectReference: {fileID: 0}
+    - target: {fileID: 8365286160844193105, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.65
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 9203639955314551732, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
+    - {fileID: 2695716800471955529, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 444826728665006464, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2056208460}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
 --- !u!1 &989495561
@@ -1164,6 +1214,63 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 444826728665006464, guid: 70bb88514989e3f4bb2f2f6be211edf9, type: 3}
   m_PrefabInstance: {fileID: 466751334}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1651536415
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1271429867}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: c3107ffccef977244b3044994dc85495, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c3107ffccef977244b3044994dc85495, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -1.3
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c3107ffccef977244b3044994dc85495, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c3107ffccef977244b3044994dc85495, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c3107ffccef977244b3044994dc85495, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c3107ffccef977244b3044994dc85495, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c3107ffccef977244b3044994dc85495, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c3107ffccef977244b3044994dc85495, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c3107ffccef977244b3044994dc85495, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c3107ffccef977244b3044994dc85495, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: c3107ffccef977244b3044994dc85495, type: 3}
+      propertyPath: m_Name
+      value: Submarine_model
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c3107ffccef977244b3044994dc85495, type: 3}
 --- !u!1 &1726049686
 GameObject:
   m_ObjectHideFlags: 0
@@ -1457,6 +1564,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 95acb1eade688df4ca81f5a8f096f6a5, type: 3}
+--- !u!4 &2056208460 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c3107ffccef977244b3044994dc85495, type: 3}
+  m_PrefabInstance: {fileID: 1651536415}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2124700796
 PrefabInstance:
   m_ObjectHideFlags: 0

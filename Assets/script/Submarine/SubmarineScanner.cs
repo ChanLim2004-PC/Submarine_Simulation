@@ -34,7 +34,7 @@ public class SubmarineScanner : MonoBehaviour
     public float scanDuration = 2f;
 
     // 기본 스캔 가능 거리 (m)
-    public float scanDistance = 60f;
+    public float scanDistance = 20f;
 
     // 스캔 박스 한 변 크기 (화면 높이 대비 비율)
     [Range(0.05f, 0.6f)]
@@ -78,6 +78,9 @@ public class SubmarineScanner : MonoBehaviour
 
     #endregion
 
+    // 직전 프레임 대상의 종류 ID (대상이 사라져도 같은 종류인지 비교하려고 따로 저장)
+    private string targetKindId;
+    
     private readonly RaycastHit[] hitBuffer = new RaycastHit[16];
     private readonly List<Vector3> cornerBuffer = new List<Vector3>(64);
     private readonly List<Vector2> screenPoints = new List<Vector2>(64);
@@ -121,9 +124,14 @@ public class SubmarineScanner : MonoBehaviour
         // 대상이 바뀌면 진행도 초기화
         if (candidate != Target)
         {
+            bool sameKind = candidate != null && candidate.Id == targetKindId;
+
             Target = candidate;
-            Progress = 0f;
+            if (!sameKind)
+                Progress = 0f;
         }
+
+        targetKindId = Target != null ? Target.Id : null;
 
         if (Target == null)
         {

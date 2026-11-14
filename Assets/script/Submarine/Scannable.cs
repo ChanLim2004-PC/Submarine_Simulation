@@ -10,6 +10,17 @@ public class Scannable : MonoBehaviour
     // 도감용 고유 ID (비워두면 오브젝트 이름 사용)
     public string id;
 
+    // 식별한 종류의 ID 목록 (같은 ID를 가진 개체는 한 번 식별하면 모두 식별됨)
+    private static readonly HashSet<string> ScannedIds = new HashSet<string>();
+
+    // 에디터에서 도메인 리로드를 끈 경우에도 재생할 때마다 초기화
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        ScannedIds.Clear();
+        All.Clear();
+    }
+
     // 식별 후 보여줄 이름
     public string displayName = "Unknown";
 
@@ -20,9 +31,12 @@ public class Scannable : MonoBehaviour
     // 이 대상만 따로 쓸 스캔 거리 (0이면 스캐너 기본값 사용)
     public float maxScanDistance = 0f;
 
-    // 식별 완료 여부
-    public bool IsScanned { get; private set; }
-
+    // 이 종류를 이미 식별했는지
+    public bool IsScanned
+    {
+        get { return ScannedIds.Contains(Id); }
+    }
+    
     public string Id
     {
         get { return string.IsNullOrEmpty(id) ? name : id; }
@@ -216,6 +230,6 @@ public class Scannable : MonoBehaviour
 
     public void MarkScanned()
     {
-        IsScanned = true;
+        ScannedIds.Add(Id);
     }
 }
