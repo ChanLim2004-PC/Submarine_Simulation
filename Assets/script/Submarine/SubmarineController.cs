@@ -77,7 +77,7 @@ public class SubmarineController : MonoBehaviour
     // y 위치로 수심을 결정 (수면 위에서는 0)
     public float depth
     {
-        get { return Mathf.Max(0f, surfaceY - transform.position.y); }
+        get { return Mathf.Max(0f, surfaceY - transform.position.y) * 5f; }
     }
 
     // 제동 중인지 (HUD 표시용)
