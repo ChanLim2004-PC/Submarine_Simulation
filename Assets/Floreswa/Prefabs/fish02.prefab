@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 4222250399951759304}
   - component: {fileID: 3310509204495840764}
   - component: {fileID: -8909912604268614333}
+  - component: {fileID: 5271641820756566281}
   m_Layer: 0
   m_Name: fish02
   m_TagString: Untagged
@@ -108,3 +109,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FlockUnit
   _FOVAngle: 270
   _smoothDamp: 0.5
+--- !u!114 &5271641820756566281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1809855982420343196}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0504a6a20a641204f826ce726b716038, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Scannable
+  id: 2
+  displayName: "\uBD95\uC5B4"
+  description: 
+  maxScanDistance: 0
