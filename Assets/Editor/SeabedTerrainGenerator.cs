@@ -15,7 +15,7 @@ public class SeabedTerrainGenerator
         int resolution = 1025; // Unity heightmap 규칙: 2^n + 1
         float terrainWidth = 2000f;
         float terrainLength = 2000f;
-        float terrainHeight = 300f;
+        float terrainHeight = 420f; // 무광층(1000m)까지 닿도록 깊이 확장
 
         TerrainData terrainData = new TerrainData();
         terrainData.heightmapResolution = resolution;
@@ -49,7 +49,7 @@ public class SeabedTerrainGenerator
             Vector2 b = a + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * length;
             trenchStart[i] = a;
             trenchEnd[i] = b;
-            trenchDepth[i] = Lerp01(rng, 0.26f, 0.40f);
+            trenchDepth[i] = Lerp01(rng, 0.32f, 0.48f); // 더 깊게 파서 무광층까지 닿게
         }
 
         // abyssal hill 능선 방향
