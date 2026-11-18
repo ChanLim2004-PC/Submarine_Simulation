@@ -32,9 +32,16 @@ MonoBehaviour:
   blendWidth: 100
   sunSurfaceIntensity: 1
   ambientColor: {r: 0.55, g: 0.7, b: 0.8, a: 1}
-  waveHeight: 2.22
-  waveLength: 2.62
-  waveSpeed: 0.2
-  waveChoppiness: 0.235
+  waveHeight: 2.06
+  waveLength: 1.22
+  waveSpeed: 0.87
+  waveChoppiness: 0.538
   rippleStrength: 0.38
-  rippleScale: 3.78
+  rippleScale: 1.6
+  causticIntensity: 0.49
+  causticFadeDistance: 29.9
+  shaftIntensity: 2.1
+  shaftDistance: 16.2
+  distortionStrength: 0.00721
+  distortionScale: 10
+  distortionSpeed: 2.37
