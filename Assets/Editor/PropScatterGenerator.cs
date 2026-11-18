@@ -9,6 +9,8 @@ public class PropScatterGenerator
     const int LayoutSeed = 11;
     const float minRadius = 16f;
     const float maxRadius = 100f;
+    const string DepthSettingsPath = "Assets/Settings/Light/DepthSettings.asset";
+    const string ProfilePath = "Assets/Settings/Light/UnderwaterProfile.asset";
 
     [MenuItem("Tools/해저 프롭 배치 (Poisson Disk Sampling)")]
     public static void ScatterProps()
@@ -27,6 +29,10 @@ public class PropScatterGenerator
             EditorUtility.DisplayDialog("프롭 배치 실패", "씬에서 SeabedTerrain 오브젝트를 찾을 수 없습니다.", "확인");
             return;
         }
+
+        // 수심대별로 산호 등장률을 다르게 주기 위한 참조 (없으면 수심 구분 없이 기존처럼 배치)
+        DepthSettings depthSettings = AssetDatabase.LoadAssetAtPath<DepthSettings>(DepthSettingsPath);
+        UnderwaterProfile profile = AssetDatabase.LoadAssetAtPath<UnderwaterProfile>(ProfilePath);
 
         GameObject oldContainer = GameObject.Find("SeabedProps");
         if (oldContainer != null)
@@ -66,7 +72,9 @@ public class PropScatterGenerator
             // 드물게 압도적으로 큰 랜드마크 바위를 섞어서 무더기 크기 자체에 편차를 줌 (레퍼런스처럼 큰 덩어리 주변에 중간·자잘한 돌)
             bool isLandmark = isRock && ruggedness > 0.45f && rng.NextDouble() < 0.12f;
             // 냉수성 산호는 바위·험지에 붙어 자라므로 산호 등장률도 ruggedness에 비례, 평지는 산호도 없이 맨바닥으로 남김
-            bool isCoral = !isRock && rng.NextDouble() < Mathf.Lerp(0.05f, 0.55f, ruggedness);
+            // 유광층을 벗어나면 햇빛이 없어 산호가 자랄 수 없으므로 수심대에 따라 등장률을 꺾음 (무광층은 맨바닥만 남게)
+            float coralDepthFactor = CoralDepthFactor(depthSettings, profile, worldY);
+            bool isCoral = !isRock && rng.NextDouble() < Mathf.Lerp(0.05f, 0.55f, ruggedness) * coralDepthFactor;
 
             GameObject prop = isRock ? CreateRockPlaceholder(rng, ruggedness, isLandmark) : (isCoral ? CreateCoralPlaceholder(rng) : null);
             if (prop != null)
@@ -267,6 +275,16 @@ public class PropScatterGenerator
 
         float sinkDepth = combined.Value.size.y * Lerp01(rng, 0.08f, 0.22f);
         obj.transform.position -= normal * sinkDepth;
+    }
+
+    // 유광층(photicBottom)에서만 온전히 등장, 황혼층은 희박하게, 무광층은 아예 없음
+    static float CoralDepthFactor(DepthSettings depthSettings, UnderwaterProfile profile, float worldY)
+    {
+        if (depthSettings == null || profile == null) return 1f;
+        float displayDepth = depthSettings.ToDisplayDepth(worldY);
+        if (displayDepth < profile.photicBottom) return 1f;
+        if (displayDepth < profile.twilightBottom) return 0.12f;
+        return 0f;
     }
 
     static GameObject CreateRockPlaceholder(System.Random rng, float ruggedness, bool isLandmark = false)

@@ -8,6 +8,8 @@ public class RockCrustGenerator
 {
     const int LayoutSeed = 29;
     const float CrustChance = 0.3f;
+    const string DepthSettingsPath = "Assets/Settings/Light/DepthSettings.asset";
+    const string ProfilePath = "Assets/Settings/Light/UnderwaterProfile.asset";
 
     [MenuItem("Tools/해저 바위 모래 크러스트 배치")]
     public static void ScatterCrust()
@@ -23,8 +25,14 @@ public class RockCrustGenerator
         if (oldContainer != null) Object.DestroyImmediate(oldContainer);
         GameObject container = new GameObject("SeabedRockCrust");
 
+        // 수심이 깊을수록 햇빛이 안 닿아 모래가 더 짙고 칙칙하게 보이도록 수심대별로 다른 머티리얼 사용 (없으면 기존 단일 색)
+        DepthSettings depthSettings = AssetDatabase.LoadAssetAtPath<DepthSettings>(DepthSettingsPath);
+        UnderwaterProfile profile = AssetDatabase.LoadAssetAtPath<UnderwaterProfile>(ProfilePath);
+
         System.Random rng = new System.Random(LayoutSeed);
-        Material crustMat = CreateCrustMaterial();
+        Material crustMatPhotic = CreateCrustMaterial(new Color(0.72f, 0.62f, 0.46f));
+        Material crustMatTwilight = CreateCrustMaterial(new Color(0.5f, 0.44f, 0.36f));
+        Material crustMatMidnight = CreateCrustMaterial(new Color(0.32f, 0.3f, 0.27f));
 
         var targets = new List<Transform>();
         foreach (Transform t in propsContainer.transform)
@@ -49,6 +57,8 @@ public class RockCrustGenerator
                 if (mf.sharedMesh != null && mf.GetComponent<Collider>() == null)
                     tempColliders.Add(mf.gameObject.AddComponent<MeshCollider>());
             }
+
+            Material crustMat = CrustMaterialFor(depthSettings, profile, rockT.position.y, crustMatPhotic, crustMatTwilight, crustMatMidnight);
 
             int blobCount = rockT.name == "Rock_Landmark" ? rng.Next(2, 4) : 1;
             int blobsMade = 0;
@@ -78,13 +88,22 @@ public class RockCrustGenerator
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
     }
 
-    static Material CreateCrustMaterial()
+    static Material CreateCrustMaterial(Color color)
     {
         var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-        mat.SetColor("_BaseColor", new Color(0.72f, 0.62f, 0.46f));
+        mat.SetColor("_BaseColor", color);
         mat.SetFloat("_Smoothness", 0.08f);
         mat.SetFloat("_Metallic", 0f);
         return mat;
+    }
+
+    static Material CrustMaterialFor(DepthSettings depthSettings, UnderwaterProfile profile, float worldY, Material photic, Material twilight, Material midnight)
+    {
+        if (depthSettings == null || profile == null) return photic;
+        float displayDepth = depthSettings.ToDisplayDepth(worldY);
+        if (displayDepth < profile.photicBottom) return photic;
+        if (displayDepth < profile.twilightBottom) return twilight;
+        return midnight;
     }
 
     // 바위 크기에 비례시키지 않고 작은 고정 범위로 제한 (큰 바위 군집에서 거대한 덩어리가 생기는 것을 방지)
