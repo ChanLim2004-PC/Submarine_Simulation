@@ -15,6 +15,8 @@ public class PropellerEffects : MonoBehaviour
     public bool reverseSpin = false;
     [Tooltip("프로펠러 축이 지나는 점 (모델 메시 좌표의 y, z). 부품에 다른 작은 조각이 섞여 있어 메시 중심 대신 허브 위치를 직접 지정")]
     public Vector2 hubCenterYZ = new Vector2(0f, 15f);
+    [Tooltip("축에서 이 거리(모델 메시 좌표) 안쪽만 돌림. 바깥 조각(모터 쪽 막대)은 멈춘 채로 남김")]
+    public float spinRadius = 3f;
 
     Transform submarine;
     Rigidbody body;
@@ -40,6 +42,66 @@ public class PropellerEffects : MonoBehaviour
         var mf = propeller.GetComponent<MeshFilter>();
         float hubX = mf != null && mf.sharedMesh != null ? mf.sharedMesh.bounds.center.x : 0f;
         hubLocal = new Vector3(hubX, hubCenterYZ.x, hubCenterYZ.y);
+
+        SplitOffStillParts(mf);
+    }
+
+    // 프로펠러 부품에 같이 묶인 축 바깥 조각을 떼어 내, 돌지 않는 별도 오브젝트로 남긴다
+    // (모델 가져오기 설정에서 Read/Write가 켜져 있어야 메시를 읽을 수 있음)
+    void SplitOffStillParts(MeshFilter mf)
+    {
+        if (mf == null || mf.sharedMesh == null) return;
+        Mesh src = mf.sharedMesh;
+        if (!src.isReadable)
+        {
+            Debug.LogWarning("[프로펠러] 모델의 Read/Write가 꺼져 있어 프로펠러 옆 조각까지 같이 돕니다.", this);
+            return;
+        }
+
+        Vector3[] verts = src.vertices;
+        Mesh spin = Instantiate(src);
+        Mesh still = Instantiate(src);
+        spin.name = src.name + "_Spin";
+        still.name = src.name + "_Still";
+        bool anyStill = false;
+
+        for (int s = 0; s < src.subMeshCount; s++)
+        {
+            int[] tris = src.GetTriangles(s);
+            var spinTris = new System.Collections.Generic.List<int>(tris.Length);
+            var stillTris = new System.Collections.Generic.List<int>();
+            for (int i = 0; i < tris.Length; i += 3)
+            {
+                Vector3 c = (verts[tris[i]] + verts[tris[i + 1]] + verts[tris[i + 2]]) / 3f;
+                float r = new Vector2(c.y - hubLocal.y, c.z - hubLocal.z).magnitude;
+                var list = r <= spinRadius ? spinTris : stillTris;
+                list.Add(tris[i]); list.Add(tris[i + 1]); list.Add(tris[i + 2]);
+            }
+            spin.SetTriangles(spinTris, s);
+            still.SetTriangles(stillTris, s);
+            anyStill |= stillTris.Count > 0;
+        }
+        if (!anyStill) { Destroy(spin); Destroy(still); return; }
+
+        spin.RecalculateBounds();
+        still.RecalculateBounds();
+        mf.mesh = spin;
+
+        // 돌기 전 위치 그대로 형제 오브젝트로 둔다
+        var go = new GameObject(propeller.name + "_Still");
+        go.transform.SetParent(propeller.parent, false);
+        go.transform.localPosition = propeller.localPosition;
+        go.transform.localRotation = propeller.localRotation;
+        go.transform.localScale = propeller.localScale;
+        go.AddComponent<MeshFilter>().sharedMesh = still;
+        var srcRenderer = propeller.GetComponent<MeshRenderer>();
+        var r2 = go.AddComponent<MeshRenderer>();
+        if (srcRenderer != null)
+        {
+            r2.sharedMaterials = srcRenderer.sharedMaterials;
+            r2.shadowCastingMode = srcRenderer.shadowCastingMode;
+            r2.receiveShadows = srcRenderer.receiveShadows;
+        }
     }
 
     void Update()
