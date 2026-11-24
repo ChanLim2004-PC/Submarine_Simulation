@@ -80,6 +80,9 @@ public class Flock : MonoBehaviour
     [SerializeField] private float minActiveDepth = 0f;    
     [SerializeField] private float maxActiveDepth = 0f; 
 
+    [Header("Terrain Avoidance(지형 회피 기능)")]
+    [SerializeField] private LayerMask terrainLayer;
+
     private Vector3 targetWanderPosition;
     private float timer;
 
@@ -190,6 +193,21 @@ public class Flock : MonoBehaviour
         NativeArray<Vector3> aligementNeighboursDirecions = new NativeArray<Vector3>(allUnits.Length, Allocator.TempJob);
         NativeArray<float> allUnitsSpeeds = new NativeArray<float>(allUnits.Length, Allocator.TempJob);
         NativeArray<float> neighbourSpeeds = new NativeArray<float>(allUnits.Length, Allocator.TempJob);
+	NativeArray<Vector3> obstacleAvoidanceDirs = new NativeArray<Vector3>(allUnits.Length, Allocator.TempJob);
+
+	for (int i = 0; i < allUnits.Length; i++)
+	{
+	    Vector3 pos = allUnits[i].myTransform.position;
+	    Vector3 dir = -allUnits[i].myTransform.forward;
+	    Vector3 avoidDir = Vector3.zero;
+
+	    if (Physics.SphereCast(pos, 0.5f, dir, out RaycastHit hit, obstacleDistance, terrainLayer))
+	    {
+		avoidDir = (hit.normal + Vector3.up * 0.35f).normalized;
+	    }
+
+	    obstacleAvoidanceDirs[i] = avoidDir;
+	}
 
         for (int i = 0; i < allUnits.Length; i++)
         {
@@ -225,6 +243,7 @@ public class Flock : MonoBehaviour
             aligementWeight = aligementWeight,
             boundsWeight = boundsWeight,
             obstacleWeight = obstacleWeight,
+	    obstacleAvoidanceDirs = obstacleAvoidanceDirs,
             fovAngle = 270f,
             minSpeed = minSpeed,
             maxSpeed = maxSpeed,
@@ -252,6 +271,7 @@ public class Flock : MonoBehaviour
         aligementNeighboursDirecions.Dispose();
         allUnitsSpeeds.Dispose();
         neighbourSpeeds.Dispose();
+	obstacleAvoidanceDirs.Dispose();
 
     }
 
@@ -299,6 +319,8 @@ public struct MoveJob : IJobParallelFor
     public NativeArray<float> allUnitsSpeeds;
     [NativeDisableParallelForRestriction]
     public NativeArray<float> neighbourSpeeds;
+    [NativeDisableParallelForRestriction]
+    public NativeArray<Vector3> obstacleAvoidanceDirs;
 
     public Vector3 flockPosition;
     public float cohesionDistance;
@@ -426,7 +448,8 @@ public struct MoveJob : IJobParallelFor
 
         //Move Unit
         Vector3 currentVelocity = unitCurrentVelocities[index];
-        Vector3 moveVector = cohesionVector + avoidanceVector + aligementVector + boundsVector;
+	Vector3 obstacleVector = obstacleAvoidanceDirs[index] * obstacleWeight;
+        Vector3 moveVector = cohesionVector + avoidanceVector + aligementVector + boundsVector + obstacleVector;
 
         moveVector = Vector3.SmoothDamp(-unitForwardDirections[index], moveVector, ref currentVelocity, smoothDamp, 10000, deltaTime);
 

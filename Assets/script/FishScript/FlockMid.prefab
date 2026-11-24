@@ -59,7 +59,7 @@ MonoBehaviour:
   _avoidanceWeight: 1
   _aligementWeight: 1
   _boundsWeight: 1
-  _obstacleWeight: 1
+  _obstacleWeight: 10
   moveInterval: 3
   wanderRadius: 50
   moveSpeed: 5
@@ -69,3 +69,6 @@ MonoBehaviour:
   spawnSpreadRadius: 15
   minActiveDepth: 50
   maxActiveDepth: 100
+  terrainLayer:
+    serializedVersion: 2
+    m_Bits: 64
